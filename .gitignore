@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+.ipynb_checkpoints
+results
 # Distribution / packaging
 .Python
 build/

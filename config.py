@@ -5,7 +5,7 @@ def add_general_group(group):
     group.add_argument("--save_path", type=str, default="results/models/", help="dir path for saving model file")
     group.add_argument("--res_path", type=str, default="results/dict/", help="dir path for output file")
     group.add_argument("--plot_path", type=str, default="results/plot/", help="dir path for output file")
-    group.add_argument("--seed", type=int, default=1, help="seed value")
+    group.add_argument("--seed", type=int, default=2605, help="seed value")
     group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp', 'fair', 'proposed']")
 
 def add_data_group(group):
@@ -20,7 +20,7 @@ def add_model_group(group):
     group.add_argument("--drop_out", type=float, default=0.2)
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
     group.add_argument("--optimizer", type=str, default='adamw')
-    group.add_argument("--epochs", type=int, default=100, help='training step')
+    group.add_argument("--epochs", type=int, default=200, help='training step')
     group.add_argument("--patience", type=int, default=8, help='early stopping')
     group.add_argument("--debug", type=bool, default=True)
     group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')

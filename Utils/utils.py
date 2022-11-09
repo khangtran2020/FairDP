@@ -1,4 +1,8 @@
 import pickle
+import random
+import os
+import numpy as np
+import torch
 
 def get_gaussian_noise(clipping_val, noise_scale):
     return noise_scale * clipping_val
@@ -12,3 +16,11 @@ def save_res(fold, args, dct, current_time):
                                              current_time.second)
     with open('{}.pkl'.format(save_name), 'wb') as f:
         pickle.dump(dct, f)
+
+def seed_everything(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
