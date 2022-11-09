@@ -3,8 +3,13 @@ import numpy as np
 from utils import *
 
 
-def print_history(fold,history,num_epochs):
+def print_history(fold,history,num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
+                                                                     current_time.month,
+                                                                     current_time.year, current_time.hour,
+                                                                     current_time.minute,
+                                                                     current_time.second)
     fig, axs = plt.subplots(1, 2, figsize=(15,5))
 
     axs[0].plot(
@@ -81,10 +86,15 @@ def print_history(fold,history,num_epochs):
     axs[1].set_title(f'FOLD {fold + 1}',size=18)
 
     axs[1].legend(loc=3)
-    plt.show()
+    plt.savefig(save_name)
 
-def print_history_fair(fold,history,num_epochs):
+def print_history_fair(fold,history,num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
+                                                                     current_time.month,
+                                                                     current_time.year, current_time.hour,
+                                                                     current_time.minute,
+                                                                     current_time.second)
     fig, axs = plt.subplots(1, 4, figsize=(22,5))
 
     axs[0].plot(
@@ -221,10 +231,15 @@ def print_history_fair(fold,history,num_epochs):
     axs[3].set_title(f'FOLD {fold + 1}',size=18)
 
     axs[3].legend(loc=3)
-    plt.show()
+    plt.savefig(save_name)
 
-def print_history_fair_(fold,history,num_epochs, args):
+def print_history_fair_(fold,history,num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
+                                                                     current_time.month,
+                                                                     current_time.year, current_time.hour,
+                                                                     current_time.minute,
+                                                                     current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17,5))
 
     axs[0].plot(
@@ -425,10 +440,15 @@ def print_history_fair_(fold,history,num_epochs, args):
     axs[2].set_title(f'FOLD {fold + 1}',size=18)
 
     axs[2].legend()
-    plt.show()
+    plt.savefig(save_name)
 
-def print_history_fair_v2(fold, history, num_epochs, args):
-    # plt.figure(figsize=(15,5))
+def print_history_fair_v2(fold,history,num_epochs, args, current_time):
+    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                          current_time.day,
+                                                                          current_time.month,
+                                                                          current_time.year, current_time.hour,
+                                                                          current_time.minute,
+                                                                          current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     # axs[0].plot(
@@ -601,10 +621,15 @@ def print_history_fair_v2(fold, history, num_epochs, args):
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[2].legend()
-    plt.show()
+    plt.savefig(save_name)
 
-def print_history_fair_v3(fold,history,num_epochs, args):
-    # plt.figure(figsize=(15,5))
+def print_history_fair_v3(fold,history,num_epochs, args, current_time):
+    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                          current_time.day,
+                                                                          current_time.month,
+                                                                          current_time.year, current_time.hour,
+                                                                          current_time.minute,
+                                                                          current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17,5))
 
     axs[0].plot(
@@ -822,4 +847,4 @@ def print_history_fair_v3(fold,history,num_epochs, args):
     axs[2].set_title(f'FOLD {fold + 1}',size=18)
 
     axs[2].legend()
-    plt.show()
+    plt.savefig(save_name)

@@ -95,8 +95,8 @@ def run_clean(fold, df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history(fold, history, num_epochs=epoch + 1)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_dpsgd(fold, df, args, device, current_time):
     df_train = df[df.fold != fold]
@@ -188,8 +188,8 @@ def run_dpsgd(fold, df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history(fold, history, num_epochs=epoch + 1)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair(fold, male_df, female_df, args, device, current_time):
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
@@ -322,8 +322,8 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history_fair(fold, history, num_epochs=epoch + 1)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history_fair(fold,history, epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
@@ -461,8 +461,8 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history_fair(fold, history, num_epochs=epoch + 1)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history_fair(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_norm(fold, df, args, device, current_time):
     df_train = df[df.fold != fold]
@@ -549,8 +549,8 @@ def run_norm(fold, df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history(fold, history, num_epochs=epoch + 1)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     df_train_mal = male_df[male_df.fold != fold]
@@ -756,8 +756,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
 
-    print_history_fair_(fold, history, num_epochs=epoch + 1, args=args)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history_fair_(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_v2(fold, male_df, female_df, args, device, current_time):
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
@@ -975,8 +975,8 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history_fair_v2(fold, history, num_epochs=epoch + 1, args=args)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history_fair_v2(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_v3(fold, male_df, female_df, args, device, current_time):
     # df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis = 0).reset_index(drop=True)
@@ -1193,5 +1193,5 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
 
-    print_history_fair_v3(fold, history, num_epochs=epoch + 1, args=args)
-    save_res(folds=fold, args=args, dct=history, current_time=current_time)
+    print_history_fair_v3(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
