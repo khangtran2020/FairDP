@@ -21,9 +21,9 @@ def add_model_group(group):
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
     group.add_argument("--optimizer", type=str, default='adamw')
     group.add_argument("--epochs", type=int, default=100, help='training step')
-    group.add_argument("--patient", type=int, default=8, help='early stopping')
-    group.add_argument("--debug", type=bool, default=False)
-    group.add_argument("--noise_scale", type=float, default=1.0, help='noise scale for dp')
+    group.add_argument("--patience", type=int, default=8, help='early stopping')
+    group.add_argument("--debug", type=bool, default=True)
+    group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')
     group.add_argument("--num_workers", type=int, default=0)
 
 

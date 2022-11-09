@@ -3,12 +3,18 @@ from Data.read_data import *
 from Data.datasets import *
 import datetime
 from Utils.running import *
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def run(args, current_time, device):
     # read data
     if args.dataset == 'adult':
         train_df, test_df, male_df, female_df, feature_cols, label = read_adult(args)
+        args.feature = feature_cols
+        args.target = label
+        args.input_dim = len(feature_cols)
+        args.output_dim = 1
     # running process
     if args.mode == 'clean':
         if args.debug:

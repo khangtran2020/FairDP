@@ -12,8 +12,8 @@ def read_adult(args):
         ' <=50K.': '<=50K',
         ' >50K.': '>50K'
     }
-    train_df = pd.read_csv('Adult/adult.data', header=None)
-    test_df = pd.read_csv('Adult/adult.test', skiprows=1, header=None)
+    train_df = pd.read_csv('Data/Adult/adult.data', header=None)
+    test_df = pd.read_csv('Data/Adult/adult.test', skiprows=1, header=None)
     all_data = pd.concat([train_df, test_df], axis=0)
     all_data.columns = header
     def hour_per_week(x):

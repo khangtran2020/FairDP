@@ -2,10 +2,10 @@ import torch
 from Data.datasets import Adult
 from torch.utils.data import DataLoader
 from Model.models import NeuralNetwork, NormNN
-from train_eval import *
-from plottings import *
+from Utils.train_eval import *
+from Utils.plottings import *
 from sklearn.metrics import accuracy_score
-from metrics import *
+from Utils.metrics import *
 from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
@@ -28,7 +28,7 @@ def run_clean(fold, df, args, device, current_time):
     # Defining DataLoader with BalanceClass Sampler
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=4
@@ -36,7 +36,7 @@ def run_clean(fold, df, args, device, current_time):
 
     valid_loader = DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -44,13 +44,13 @@ def run_clean(fold, df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.LR)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
@@ -69,7 +69,7 @@ def run_clean(fold, df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
@@ -89,7 +89,7 @@ def run_clean(fold, df, args, device, current_time):
         history['val_history_loss'].append(val_loss)
         history['val_history_acc'].append(acc_score)
 
-        es(acc_score, model, f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -117,7 +117,7 @@ def run_dpsgd(fold, df, args, device, current_time):
     sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         sampler=sampler,
@@ -126,7 +126,7 @@ def run_dpsgd(fold, df, args, device, current_time):
 
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -134,13 +134,13 @@ def run_dpsgd(fold, df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.LR)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
@@ -160,7 +160,7 @@ def run_dpsgd(fold, df, args, device, current_time):
 
     # THE ENGINE LOOP
     i = 0
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
                                                               scheduler=None, clipping=args.clip,
@@ -182,7 +182,7 @@ def run_dpsgd(fold, df, args, device, current_time):
         history['val_history_loss'].append(val_loss)
         history['val_history_acc'].append(acc_score)
 
-        es(acc_score, model, f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -223,7 +223,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
     # Defining DataLoader with BalanceClass Sampler
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=4
@@ -231,7 +231,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
 
     valid_loader = DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -240,7 +240,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
 
     valid_male_loader = DataLoader(
         valid_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -249,7 +249,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
 
     valid_female_loader = DataLoader(
         valid_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -257,13 +257,13 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.LR)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
@@ -288,7 +288,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
@@ -316,7 +316,7 @@ def run_fair(fold, male_df, female_df, args, device, current_time):
         history['female_tpr'].append(female_tpr)
         history['equal_odd'].append(equal_odd)
 
-        es(acc_score, model, f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -358,7 +358,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
     sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         sampler=sampler,
@@ -367,7 +367,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
 
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -376,7 +376,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
 
     valid_male_loader = torch.utils.data.DataLoader(
         valid_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -385,7 +385,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
 
     valid_female_loader = torch.utils.data.DataLoader(
         valid_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -395,13 +395,13 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
     # Defining Device
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.LR)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
@@ -426,7 +426,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
                                                               scheduler=None, clipping=args.clip,
@@ -455,7 +455,7 @@ def run_fair_dpsgd(fold, male_df, female_df, args, device, current_time):
         history['female_tpr'].append(female_tpr)
         history['equal_odd'].append(equal_odd)
 
-        es(acc_score, model, f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -482,7 +482,7 @@ def run_norm(fold, df, args, device, current_time):
     # Defining DataLoader with BalanceClass Sampler
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=4
@@ -490,7 +490,7 @@ def run_norm(fold, df, args, device, current_time):
 
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=4,
         shuffle=False,
         pin_memory=True,
@@ -498,13 +498,13 @@ def run_norm(fold, df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model = NormNN(args.input_dim, args.hidden_dim, args.output_dim)
+    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.LR)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
@@ -523,7 +523,7 @@ def run_norm(fold, df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
@@ -543,7 +543,7 @@ def run_norm(fold, df, args, device, current_time):
         history['val_history_loss'].append(val_loss)
         history['val_history_acc'].append(acc_score)
 
-        es(acc_score, model, f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -583,7 +583,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
     train_male_loader = DataLoader(
         train_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         sampler=sampler_male,
@@ -593,7 +593,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
     train_female_loader = DataLoader(
         train_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         sampler=sampler_female,
@@ -602,7 +602,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
 
     valid_male_loader = torch.utils.data.DataLoader(
         valid_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -611,7 +611,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
 
     valid_female_loader = torch.utils.data.DataLoader(
         valid_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -619,9 +619,9 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model_male = NormNN(args.input_dim, args.hidden_dim, args.output_dim)
-    model_female = NormNN(args.input_dim, args.hidden_dim, args.output_dim)
-    global_model = NormNN(args.input_dim, args.hidden_dim, args.output_dim)
+    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    global_model = NormNN(args.input_dim, args.n_hid, args.output_dim)
 
     model_male.to(device)
     model_female.to(device)
@@ -630,8 +630,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.LR)
-    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.LR)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
@@ -666,7 +666,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
 
         global_dict = global_model.state_dict()
@@ -750,7 +750,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, args, device, current_time):
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        # es(acc_score,model,f'model_{fold}.bin')
+        # es(acc_score,model,args.save_path+f'model_{fold}.bin')
 
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -808,7 +808,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
     # Defining DataLoader with BalanceClass Sampler
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=0
@@ -816,7 +816,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
 
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -825,7 +825,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
 
     train_male_loader = DataLoader(
         train_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=0
@@ -833,7 +833,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
 
     train_female_loader = DataLoader(
         train_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=0
@@ -841,7 +841,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
 
     valid_male_loader = torch.utils.data.DataLoader(
         valid_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -850,7 +850,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
 
     valid_female_loader = torch.utils.data.DataLoader(
         valid_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -858,9 +858,9 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model_male = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
-    model_female = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
-    global_model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model_male = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model_female = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    global_model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
 
     model_male.to(device)
     model_female.to(device)
@@ -869,9 +869,9 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.LR)
-    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.LR)
-    optimizer_global = torch.optim.Adam(global_model.parameters(), lr=args.LR)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
+    optimizer_global = torch.optim.Adam(global_model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler_global = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_global, mode='max',
@@ -908,7 +908,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
 
         # dataloader, model, criterion, optimizer, device, scheduler, epoch, clipping, noise_scale
@@ -969,7 +969,7 @@ def run_fair_v2(fold, male_df, female_df, args, device, current_time):
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        es(acc_global_score, global_model, f'model_{fold}.bin')
+        es(acc_global_score, global_model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -1026,7 +1026,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
     # Defining DataLoader with BalanceClass Sampler
     # train_loader = DataLoader(
     #     train_dataset,
-    #     batch_size=args.BATCH_SIZE,
+    #     batch_size=args.batch_size,
     #     pin_memory=True,
     #     drop_last=True,
     #     num_workers=0
@@ -1034,7 +1034,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
 
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -1043,7 +1043,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
 
     train_male_loader = DataLoader(
         train_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=0
@@ -1051,7 +1051,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
 
     train_female_loader = DataLoader(
         train_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
         num_workers=0
@@ -1059,7 +1059,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
 
     valid_male_loader = torch.utils.data.DataLoader(
         valid_male_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -1068,7 +1068,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
 
     valid_female_loader = torch.utils.data.DataLoader(
         valid_female_dataset,
-        batch_size=args.BATCH_SIZE,
+        batch_size=args.batch_size,
         num_workers=0,
         shuffle=False,
         pin_memory=True,
@@ -1076,9 +1076,9 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model_male = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
-    model_female = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
-    global_model = NeuralNetwork(args.input_dim, args.hidden_dim, args.output_dim)
+    model_male = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model_female = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    global_model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
 
     model_male.to(device)
     model_female.to(device)
@@ -1087,9 +1087,9 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.LR)
-    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.LR)
-    # optimizer_global = torch.optim.Adam(global_model.parameters(), lr=args.LR)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
+    # optimizer_global = torch.optim.Adam(global_model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
@@ -1122,7 +1122,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.EPOCHS), total=args.EPOCHS)
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         global_dict = global_model.state_dict()
         model_male.load_state_dict(global_dict)
@@ -1187,7 +1187,7 @@ def run_fair_v3(fold, male_df, female_df, args, device, current_time):
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        es(acc_global_score, global_model, f'model_{fold}.bin')
+        es(acc_global_score, global_model, args.save_path+f'model_{fold}.bin')
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import *
+from Utils.utils import *
 
 
 def print_history(fold,history,num_epochs, args, current_time):

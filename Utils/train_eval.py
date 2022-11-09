@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from utils import get_gaussian_noise
+from Utils.utils import get_gaussian_noise
 
 class EarlyStopping:
     def __init__(self, patience=7, mode="max", delta=0.001, verbose=False):
