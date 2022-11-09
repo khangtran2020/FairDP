@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 
-def read_adult():
+def read_adult(args):
     header = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'income']
     label_dict = {
         ' <=50K': '<=50K',
@@ -75,8 +75,10 @@ def read_adult():
     feature_cols = list(train_df.columns)
     feature_cols.remove('income')
     label = 'income'
-
-    return train_df, test_df, feature_cols, label
+    fold_separation(train_df, args.folds, feature_cols, label)
+    male_df = train_df[train_df['sex'] == 1].copy()
+    female_df = train_df[train_df['sex'] == 0].copy()
+    return train_df, test_df, male_df, female_df, feature_cols, label
 
 def fold_separation(train_df, folds, feat_cols, label):
     skf = StratifiedKFold(n_splits=folds)
