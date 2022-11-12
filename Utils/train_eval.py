@@ -45,14 +45,13 @@ class EarlyStopping:
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
 
+
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
     model.train()
 
     train_targets = []
     train_outputs = []
-
-    ep_loss = 0
 
     for bi, d in enumerate(dataloader):
         features, target = d
@@ -66,7 +65,6 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
         output = torch.squeeze(output)
 
         loss = criterion(output, target)
-        ep_loss += loss.item()
         loss.backward()
         optimizer.step()
 
@@ -78,13 +76,14 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
         train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
         train_outputs.extend(output)
 
-    return ep_loss, train_outputs, train_targets
+    return loss.item(), train_outputs, train_targets
+
 
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []
     fin_outputs = []
-    ep_loss = 0
+
     model.eval()
     with torch.no_grad():
         for bi, d in enumerate(data_loader):
@@ -97,14 +96,15 @@ def eval_fn(data_loader, model, criterion, device):
             # if outputs.size(dim=0) > 1:
             outputs = torch.squeeze(outputs, dim=-1)
             loss_eval = criterion(outputs, target)
-            ep_loss += loss_eval.item()
 
             outputs = outputs.cpu().detach().numpy()
 
             fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
             fin_outputs.extend(outputs)
 
-    return ep_loss, fin_outputs, fin_targets
+    return loss_eval.item(), fin_outputs, fin_targets
+
+
 
 def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
@@ -114,38 +114,39 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
     train_targets = []
     train_outputs = []
 
-    batch = next(iter(dataloader))
-    features, target = batch
-    features = features.to(device, dtype=torch.float)
-    target = target.to(device, dtype=torch.float)
-    optimizer.zero_grad()
-    model.zero_grad()
-    temp_par = {}
-    for p in model.named_parameters():
-        temp_par[p[0]] = torch.zeros_like(p[1])
-    bz = features.size(dim=0)
-    train_loss = 0
-    for i in range(bz):
-        feat = features[i]
-        targ = target[i]
-        output = model(feat)
-        output = torch.squeeze(output)
-        loss = criterion(output, targ)
-        train_loss += loss.item()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clipping)
+    for bi, d in enumerate(dataloader):
+        features, target = d
+        features = features.to(device, dtype=torch.float)
+        target = target.to(device, dtype=torch.float)
+        optimizer.zero_grad()
+        temp_par = {}
         for p in model.named_parameters():
-            temp_par[p[0]] += p[1].grad / bz
-        output = output.cpu().detach().numpy()
-        train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.append(output)
-        model.zero_grad()
+            temp_par[p[0]] = torch.zeros_like(p[1])
+        bz = features.size(dim=0)
+        train_loss = 0
+        for i in range(bz):
+            model.zero_grad()
+            feat = features[i]
+            targ = target[i]
+            output = model(feat)
+            output = torch.squeeze(output)
+            loss = criterion(output, targ)
+            train_loss += loss.item()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), clipping)
+            for p in model.named_parameters():
+                temp_par[p[0]] += p[1].grad
+            output = output.cpu().detach().numpy()
+            train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
+            train_outputs.append(output)
+            model.zero_grad()
 
-    for p in model.named_parameters():
-        p[1].grad = temp_par[p[0]] + torch.normal(0, noise_std, temp_par[p[0]].size()).to(device) / bz
-    optimizer.step()
+        for p in model.named_parameters():
+            p[1].grad = temp_par[p[0]] + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(device)
+            p[1].grad = p[1].grad/bz
+        optimizer.step()
 
     if scheduler is not None:
         scheduler.step()
 
-    return train_loss / bz, train_outputs, train_targets
+    return loss.item(), train_outputs, train_targets
