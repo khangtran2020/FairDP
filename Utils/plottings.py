@@ -3,14 +3,18 @@ import numpy as np
 from Utils.utils import *
 
 
-def print_history(fold,history,num_epochs, args, current_time):
+def print_history(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
-                                                                     current_time.month,
-                                                                     current_time.year, current_time.hour,
-                                                                     current_time.minute,
-                                                                     current_time.second)
-    fig, axs = plt.subplots(1, 2, figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -45,15 +49,15 @@ def print_history(fold,history,num_epochs, args, current_time):
     axs[0].scatter(x, y, s=200, color='#1f77b4')
 
     axs[0].text(
-        x-0.03*xdist,
-        y-0.13*ydist,
-        'max acc\n%.2f'%y,
+        x - 0.03 * xdist,
+        y - 0.13 * ydist,
+        'max acc\n%.2f' % y,
         size=14
     )
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
-    axs[0].set_title(f'FOLD {fold + 1}',size=18)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend(loc=2)
 
     # plt2 = plt.gca().twinx()
@@ -90,27 +94,32 @@ def print_history(fold,history,num_epochs, args, current_time):
     axs[1].scatter(x, y, s=200, color='#d62728')
 
     axs[1].text(
-        x-0.03*xdist,
-        y+0.05*ydist,
+        x - 0.03 * xdist,
+        y + 0.05 * ydist,
         'min loss',
         size=14
     )
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
-    axs[1].set_title(f'FOLD {fold + 1}',size=18)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend(loc=3)
     plt.savefig(save_name)
 
-def print_history_fair(fold,history,num_epochs, args, current_time):
+
+def print_history_fair(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
-                                                                     current_time.month,
-                                                                     current_time.year, current_time.hour,
-                                                                     current_time.minute,
-                                                                     current_time.second)
-    fig, axs = plt.subplots(1, 4, figsize=(22,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
+    fig, axs = plt.subplots(1, 4, figsize=(22, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -145,15 +154,15 @@ def print_history_fair(fold,history,num_epochs, args, current_time):
     axs[0].scatter(x, y, s=200, color='#1f77b4')
 
     axs[0].text(
-        x-0.03*xdist,
-        y-0.13*ydist,
-        'max acc\n%.2f'%y,
+        x - 0.03 * xdist,
+        y - 0.13 * ydist,
+        'max acc\n%.2f' % y,
         size=14
     )
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
-    axs[0].set_title(f'FOLD {fold + 1}',size=18)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend(loc=2)
 
     # plt2 = plt.gca().twinx()
@@ -191,15 +200,15 @@ def print_history_fair(fold,history,num_epochs, args, current_time):
     axs[1].scatter(x, y, s=200, color='#d62728')
 
     axs[1].text(
-        x-0.03*xdist,
-        y+0.05*ydist,
+        x - 0.03 * xdist,
+        y + 0.05 * ydist,
         'min loss',
         size=14
     )
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
-    axs[1].set_title(f'FOLD {fold + 1}',size=18)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend(loc=3)
 
@@ -229,7 +238,7 @@ def print_history_fair(fold,history,num_epochs, args, current_time):
 
     axs[2].set_ylabel('Prob/Demographic Parity', size=14)
     axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}',size=18)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[2].legend(loc=3)
 
@@ -259,19 +268,24 @@ def print_history_fair(fold,history,num_epochs, args, current_time):
 
     axs[3].set_ylabel('TPR/Equality of Odds', size=14)
     axs[3].set_xlabel('Epochs', size=14)
-    axs[3].set_title(f'FOLD {fold + 1}',size=18)
+    axs[3].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[3].legend(loc=3)
     plt.savefig(save_name)
 
-def print_history_fair_(fold,history,num_epochs, args, current_time):
+
+def print_history_fair_(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
-                                                                     current_time.month,
-                                                                     current_time.year, current_time.hour,
-                                                                     current_time.minute,
-                                                                     current_time.second)
-    fig, axs = plt.subplots(1, 3, figsize=(17,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -330,7 +344,7 @@ def print_history_fair_(fold,history,num_epochs, args, current_time):
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
-    axs[0].set_title(f'FOLD {fold + 1}',size=18)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend()
 
     # plt2 = plt.gca().twinx()
@@ -392,7 +406,7 @@ def print_history_fair_(fold,history,num_epochs, args, current_time):
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
-    axs[1].set_title(f'FOLD {fold + 1}',size=18)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend()
 
@@ -476,7 +490,7 @@ def print_history_fair_(fold,history,num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        np.ones(num_epochs)*value_bound,
+        np.ones(num_epochs) * value_bound,
         '-o',
         label='Bound',
         color='blue'
@@ -484,18 +498,22 @@ def print_history_fair_(fold,history,num_epochs, args, current_time):
 
     axs[2].set_ylabel('L1 norm', size=14)
     axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}',size=18)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[2].legend()
     plt.savefig(save_name)
 
-def print_history_fair_v2(fold,history,num_epochs, args, current_time):
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                          current_time.day,
-                                                                          current_time.month,
-                                                                          current_time.year, current_time.hour,
-                                                                          current_time.minute,
-                                                                          current_time.second)
+
+def print_history_fair_v2(fold, history, num_epochs, args, current_time):
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     # axs[0].plot(
@@ -686,14 +704,18 @@ def print_history_fair_v2(fold,history,num_epochs, args, current_time):
     axs[2].legend()
     plt.savefig(save_name)
 
-def print_history_fair_v3(fold,history,num_epochs, args, current_time):
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                          current_time.day,
-                                                                          current_time.month,
-                                                                          current_time.year, current_time.hour,
-                                                                          current_time.minute,
-                                                                          current_time.second)
-    fig, axs = plt.subplots(1, 3, figsize=(17,5))
+
+def print_history_fair_v3(fold, history, num_epochs, args, current_time):
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -760,7 +782,7 @@ def print_history_fair_v3(fold,history,num_epochs, args, current_time):
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
-    axs[0].set_title(f'FOLD {fold + 1}',size=18)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend()
 
     # plt2 = plt.gca().twinx()
@@ -813,7 +835,6 @@ def print_history_fair_v3(fold,history,num_epochs, args, current_time):
         color='deeppink'
     )
 
-
     # x = np.argmin(history['val_history_loss'])
     # y = np.min(history['val_history_loss'])
 
@@ -831,7 +852,7 @@ def print_history_fair_v3(fold,history,num_epochs, args, current_time):
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
-    axs[1].set_title(f'FOLD {fold + 1}',size=18)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend()
 
@@ -915,7 +936,7 @@ def print_history_fair_v3(fold,history,num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        np.ones(num_epochs)*value_bound,
+        np.ones(num_epochs) * value_bound,
         '-o',
         label='Bound',
         color='blue'
@@ -923,19 +944,24 @@ def print_history_fair_v3(fold,history,num_epochs, args, current_time):
 
     axs[2].set_ylabel('L1 norm', size=14)
     axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}',size=18)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[2].legend()
     plt.savefig(save_name)
 
-def print_history_fair_alg1(fold,history,num_epochs, args, current_time):
+
+def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold, current_time.day,
-                                                                     current_time.month,
-                                                                     current_time.year, current_time.hour,
-                                                                     current_time.minute,
-                                                                     current_time.second)
-    fig, axs = plt.subplots(1, 3, figsize=(17,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+                                                                                        args.ns,
+                                                                                        args.clip,
+                                                                                        current_time.day,
+                                                                                        current_time.month,
+                                                                                        current_time.year,
+                                                                                        current_time.hour,
+                                                                                        current_time.minute,
+                                                                                        current_time.second)
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -994,7 +1020,7 @@ def print_history_fair_alg1(fold,history,num_epochs, args, current_time):
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
-    axs[0].set_title(f'FOLD {fold + 1}',size=18)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend()
 
     # plt2 = plt.gca().twinx()
@@ -1056,7 +1082,7 @@ def print_history_fair_alg1(fold,history,num_epochs, args, current_time):
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
-    axs[1].set_title(f'FOLD {fold + 1}',size=18)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend()
 
@@ -1141,7 +1167,7 @@ def print_history_fair_alg1(fold,history,num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        np.ones(num_epochs)*value_bound,
+        np.ones(num_epochs) * value_bound,
         '-o',
         label='Proposed Bound',
         color='blue'
@@ -1157,7 +1183,7 @@ def print_history_fair_alg1(fold,history,num_epochs, args, current_time):
 
     axs[2].set_ylabel('L1 norm', size=14)
     axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}',size=18)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[2].legend()
     plt.savefig(save_name)
