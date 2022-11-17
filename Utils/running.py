@@ -9,6 +9,7 @@ from Utils.metrics import *
 from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
+from opacus import PrivacyEngine
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
     df_train = train_df[train_df.fold != fold]
@@ -68,7 +69,7 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
+                                                           factor=0.1, patience=3, verbose=True,
                                                            threshold=0.0001, threshold_mode='rel',
                                                            cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
@@ -182,7 +183,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
                                                            threshold=0.0001, threshold_mode='rel',
                                                            cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    # es = EarlyStopping(patience=args.patience, verbose=False)
+    es = EarlyStopping(patience=args.patience, verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -222,11 +223,11 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
 
-        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
 
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
+        if es.early_stop:
+            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+            break
 
     print_history(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
@@ -633,6 +634,10 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
 #     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current_time):
+    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
+        drop=True)
+    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
+        drop=True)
     df_train_mal = male_df[male_df.fold != fold]
     df_train_fem = female_df[female_df.fold != fold]
     df_val_mal = male_df[male_df.fold == fold]
@@ -657,6 +662,16 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     valid_female_dataset = Adult(
         df_val_fem[args.feature].values,
         df_val_fem[args.target].values
+    )
+
+    train_dataset = Adult(
+        df_train[args.feature].values,
+        df_train[args.target].values
+    )
+
+    valid_dataset = Adult(
+        df_valid[args.feature].values,
+        df_valid[args.target].values
     )
 
     test_dataset = Adult(
@@ -702,6 +717,23 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         pin_memory=True,
         drop_last=False,
     )
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
@@ -737,7 +769,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
                                                                   threshold=0.0001, threshold_mode='rel',
                                                                   cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    # es = EarlyStopping(patience=args.patience,verbose=False)
+    es = EarlyStopping(patience=args.patience,verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -751,6 +783,10 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         'val_female_history_acc': [],
         'test_history_loss': [],
         'test_history_acc': [],
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
         'prob_male': [],
         'prob_female': [],
         'demo_parity': [],
@@ -798,6 +834,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
 
         val_male_loss, outputs_male, targets_male = eval_fn(valid_male_loader, global_model, criterion, device)
         val_female_loss, outputs_female, targets_female = eval_fn(valid_female_loader, global_model, criterion, device)
+        train_loss, train_output, train_target = eval_fn(train_loader, global_model, criterion, device)
+        valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
         test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
 
         prob_male, prob_female, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
@@ -821,6 +859,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         acc_male_score = accuracy_score(targets_male, np.round(np.array(outputs_male)))
         acc_female_score = accuracy_score(targets_female, np.round(np.array(outputs_female)))
 
+        train_acc = accuracy_score(train_target, np.round(np.array(train_output)))
+        val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
         test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
 
         scheduler_male.step(acc_male_score)
@@ -842,6 +882,10 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['val_female_history_acc'].append(acc_female_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(valid_loss)
+        history['val_history_acc'].append(val_acc)
         history['prob_male'].append(prob_male)
         history['prob_female'].append(prob_female)
         history['demo_parity'].append(demo_p)
@@ -851,13 +895,13 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        # es(acc_score,model,args.save_path+f'model_{fold}.bin')
+        es(val_acc,global_model,args.save_path+f'model_{fold}.bin')
 
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
+        if es.early_stop:
+            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+            break
 
-    print_history_fair_(fold,history,epoch+1, args, current_time)
+    print_history_fair_v4(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_v2(fold, male_df, female_df, test_df, args, device, current_time):
@@ -1563,4 +1607,128 @@ def run_fair_dpsgd_alg1(fold, male_df, female_df, test_df, args, device, current
         #     break
 
     print_history_fair_alg1(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+def run_opacus(fold, train_df, test_df, args, device, current_time):
+    df_train = train_df[train_df.fold != fold]
+    df_valid = train_df[train_df.fold == fold]
+
+    # Defining DataSet
+    train_dataset = Adult(
+        df_train[args.feature].values,
+        df_train[args.target].values
+    )
+
+    valid_dataset = Adult(
+        df_valid[args.feature].values,
+        df_valid[args.target].values
+    )
+
+    test_dataset = Adult(
+        test_df[args.feature].values,
+        test_df[args.target].values
+    )
+
+    # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        drop_last=True,
+        sampler=sampler,
+        num_workers=0
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    # Defining Model for specific fold
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+
+    privacy_engine = PrivacyEngine()
+
+    model, optimizer, train_loader = privacy_engine.make_private_with_epsilon(
+        module=model,
+        optimizer=optimizer,
+        data_loader=train_loader,
+        epochs=args.epochs,
+        target_epsilon=args.tar_eps,
+        target_delta=args.tar_delt,
+        max_grad_norm=args.clip,
+    )
+    print(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
+
+    # Defining LR SCheduler
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=10, verbose=True,
+    #                                                        threshold=0.0001, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=0, eps=1e-08)
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+    }
+
+    # THE ENGINE LOOP
+    i = 0
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        train_loss, train_out, train_targets = train_opacus(train_loader, model, criterion, optimizer, device,args)
+        # train_fn_dpsgd(train_loader, model,criterion, optimizer, device,scheduler=None,epoch=epoch, clipping=args.clip, noise_scale=args.ns)
+        # return
+        val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
+        test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+
+        train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
+        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+
+        # scheduler.step(acc_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
+                        Valid_ACC_SCORE=acc_score)
+
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(val_loss)
+        history['val_history_acc'].append(acc_score)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+
+        es(acc_score, model, args.save_path+f'model_{fold}.bin')
+
+        if es.early_stop:
+            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+            break
+
+    print_history(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

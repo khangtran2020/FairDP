@@ -26,14 +26,21 @@ def add_model_group(group):
     group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')
     group.add_argument("--num_workers", type=int, default=0)
 
+def add_opacus_group(group):
+    group.add_argument("--tar_eps", type=float, default=1.0, help="learning rate")
+    group.add_argument('--tar_delt', type=float, default=1e-4, help='number of folds for cross-validation')
+    group.add_argument('--MAX_PHYSICAL_BATCH_SIZE', type=int, default=128, help="batch size for training process")
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     data_group = parser.add_argument_group(title="Data-related configuration")
     model_group = parser.add_argument_group(title="Model-related configuration")
     general_group = parser.add_argument_group(title="General configuration")
+    opacus_group = parser.add_argument_group(title="Opacus configuration")
 
     add_data_group(data_group)
     add_model_group(model_group)
     add_general_group(general_group)
+    add_opacus_group(opacus_group)
     return parser.parse_args()
