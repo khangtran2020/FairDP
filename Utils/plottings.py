@@ -1219,7 +1219,7 @@ def print_history_fair_v4(fold, history, num_epochs, args, current_time):
 
     axs[0].plot(
         np.arange(num_epochs),
-        history['valid_history_acc'],
+        history['val_history_acc'],
         '-*',
         label='Train female ACC',
         color='#1f77b4'
