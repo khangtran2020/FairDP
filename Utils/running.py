@@ -769,7 +769,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
                                                                   threshold=0.0001, threshold_mode='rel',
                                                                   cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience,verbose=False)
+    # es = EarlyStopping(patience=args.patience,verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -895,11 +895,11 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        es(val_acc,global_model,args.save_path+f'model_{fold}.bin')
-
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # es(val_acc,global_model,args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history_fair_v4(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
