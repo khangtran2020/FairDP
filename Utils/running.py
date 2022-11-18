@@ -676,11 +676,11 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
                                                                 factor=0.1, patience=3, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
-                                                                cooldown=0, min_lr=0, eps=1e-08)
+                                                                cooldown=0, min_lr=0.0005, eps=1e-08)
     scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
                                                                   factor=0.1, patience=3, verbose=True,
                                                                   threshold=0.0001, threshold_mode='rel',
-                                                                  cooldown=0, min_lr=0, eps=1e-08)
+                                                                  cooldown=0, min_lr=0.0005, eps=1e-08)
     # DEfining Early Stopping Object
     # es = EarlyStopping(patience=args.patience,verbose=False)
 
