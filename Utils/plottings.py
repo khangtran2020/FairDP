@@ -1205,7 +1205,7 @@ def print_history_fair_v4(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['train_history_acc'],
         '-o',
-        label='Train male ACC',
+        label='Train ACC',
         color='#ff7f0e'
     )
 
@@ -1221,7 +1221,7 @@ def print_history_fair_v4(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['val_history_acc'],
         '-*',
-        label='Train female ACC',
+        label='Valid ACC',
         color='#1f77b4'
     )
 
@@ -1267,7 +1267,7 @@ def print_history_fair_v4(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['train_history_loss'],
         '-o',
-        label='Train male Loss',
+        label='Train Loss',
         color='#2ca02c'
     )
 
@@ -1283,7 +1283,7 @@ def print_history_fair_v4(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['val_history_loss'],
         '-*',
-        label='Train female Loss',
+        label='Valid Loss',
         color='#d62728'
     )
 
