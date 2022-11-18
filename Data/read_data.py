@@ -74,6 +74,7 @@ def read_adult(args):
 
     feature_cols = list(train_df.columns)
     feature_cols.remove('income')
+    feature_cols.remove('sex')
     label = 'income'
     fold_separation(train_df, args.folds, feature_cols, label)
     male_df = train_df[train_df['sex'] == 1].copy()
