@@ -176,15 +176,15 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=0, eps=1e-08)
+                                                           factor=0.1, patience=3, verbose=True,
+                                                           threshold=0.0005, threshold_mode='rel',
+                                                           cooldown=0, min_lr=0.0005, eps=1e-08)
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    # es = EarlyStopping(patience=args.patience, verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -224,11 +224,11 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
 
-        es(acc_score, model, args.save_path+f'model_{fold}.bin')
-
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
@@ -545,94 +545,6 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
 
     print_history_fair(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
-# def run_norm(fold, df, args, device, current_time):
-#     df_train = df[df.fold != fold]
-#     df_valid = df[df.fold == fold]
-#
-#     # Defining DataSet
-#     train_dataset = Adult(
-#         df_train[args.feature].values,
-#         df_train[args.target].values
-#     )
-#
-#     valid_dataset = Adult(
-#         df_valid[args.feature].values,
-#         df_valid[args.target].values
-#     )
-#
-#     # Defining DataLoader with BalanceClass Sampler
-#     train_loader = DataLoader(
-#         train_dataset,
-#         batch_size=args.batch_size,
-#         pin_memory=True,
-#         drop_last=True,
-#         num_workers=4
-#     )
-#
-#     valid_loader = torch.utils.data.DataLoader(
-#         valid_dataset,
-#         batch_size=args.batch_size,
-#         num_workers=4,
-#         shuffle=False,
-#         pin_memory=True,
-#         drop_last=False,
-#     )
-#
-#     # Defining Model for specific fold
-#     model = NormNN(args.input_dim, args.n_hid, args.output_dim)
-#     model.to(device)
-#
-#     # DEfining criterion
-#     criterion = torch.nn.BCELoss()
-#     criterion.to(device)
-#     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-#
-#     # Defining LR SCheduler
-#     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-#                                                            factor=0.1, patience=10, verbose=True,
-#                                                            threshold=0.0001, threshold_mode='rel',
-#                                                            cooldown=0, min_lr=0, eps=1e-08)
-#     # DEfining Early Stopping Object
-#     es = EarlyStopping(patience=args.patience, verbose=False)
-#
-#     # History dictionary to store everything
-#     history = {
-#         'train_history_loss': [],
-#         'train_history_acc': [],
-#         'val_history_loss': [],
-#         'val_history_acc': [],
-#     }
-#
-#     # THE ENGINE LOOP
-#     tk0 = tqdm(range(args.epochs), total=args.epochs)
-#     for epoch in tk0:
-#         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
-#                                                         scheduler=None)
-#
-#         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
-#
-#         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
-#         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
-#
-#         scheduler.step(acc_score)
-#
-#         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
-#                         Valid_ACC_SCORE=acc_score)
-#
-#         history['train_history_loss'].append(train_loss)
-#         history['train_history_acc'].append(train_acc)
-#         history['val_history_loss'].append(val_loss)
-#         history['val_history_acc'].append(acc_score)
-#
-#         es(acc_score, model, args.save_path+f'model_{fold}.bin')
-#
-#         if es.early_stop:
-#             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-#             break
-#
-#     print_history(fold,history,epoch+1, args, current_time)
-#     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current_time):
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
@@ -1730,6 +1642,119 @@ def run_opacus(fold, train_df, test_df, args, device, current_time):
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
             break
+
+    print_history(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+def run_dpsgd_without_optimizer(fold, train_df, test_df, args, device, current_time):
+    df_train = train_df[train_df.fold != fold]
+    df_valid = train_df[train_df.fold == fold]
+
+    # Defining DataSet
+    train_dataset = Adult(
+        df_train[args.feature].values,
+        df_train[args.target].values
+    )
+
+    valid_dataset = Adult(
+        df_valid[args.feature].values,
+        df_valid[args.target].values
+    )
+
+    test_dataset = Adult(
+        test_df[args.feature].values,
+        test_df[args.target].values
+    )
+
+    # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        drop_last=True,
+        sampler=sampler,
+        num_workers=0
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    # Defining Model for specific fold
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    # Defining LR SCheduler
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=3, verbose=True,
+    #                                                        threshold=0.0005, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=0.0005, eps=1e-08)
+    # DEfining Early Stopping Object
+    # es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+    }
+
+    # THE ENGINE LOOP
+    i = 0
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        train_loss, train_out, train_targets = train_fn_dpsgd_without_optimizer(train_loader, model, criterion, device,
+                                                              scheduler=None, clipping=args.clip,
+                                                              noise_scale=args.ns, lr=args.lr)
+        # train_fn_dpsgd(train_loader, model,criterion, optimizer, device,scheduler=None,epoch=epoch, clipping=args.clip, noise_scale=args.ns)
+        # return
+        val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
+        test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+
+        train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
+        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+
+        # scheduler.step(acc_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
+                        Valid_ACC_SCORE=acc_score)
+
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(val_loss)
+        history['val_history_acc'].append(acc_score)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+
+        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
