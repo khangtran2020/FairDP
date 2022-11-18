@@ -71,6 +71,6 @@ def run(args, current_time, device):
 if __name__ == "__main__":
     current_time = datetime.datetime.now()
     args = parse_args()
-    # seed_everything(args.seed)
+    seed_everything(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     run(args, current_time, device)

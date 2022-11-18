@@ -10,6 +10,7 @@ from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
 from opacus import PrivacyEngine
+# from pyvacy import optim, analysis
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
     df_train = train_df[train_df.fold != fold]
@@ -761,15 +762,15 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
 
     # Defining LR SCheduler
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
-                                                                factor=0.1, patience=10, verbose=True,
+                                                                factor=0.1, patience=3, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
                                                                 cooldown=0, min_lr=0, eps=1e-08)
     scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
-                                                                  factor=0.1, patience=10, verbose=True,
+                                                                  factor=0.1, patience=3, verbose=True,
                                                                   threshold=0.0001, threshold_mode='rel',
                                                                   cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    # es = EarlyStopping(patience=args.patience,verbose=False)
+    es = EarlyStopping(patience=args.patience,verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -895,11 +896,11 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        # es(val_acc,global_model,args.save_path+f'model_{fold}.bin')
-        #
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
+        es(val_acc,global_model,args.save_path+f'model_{fold}.bin')
+
+        if es.early_stop:
+            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+            break
 
     print_history_fair_v4(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

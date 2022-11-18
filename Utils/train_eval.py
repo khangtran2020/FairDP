@@ -5,6 +5,7 @@ from opacus.utils.batch_memory_manager import BatchMemoryManager
 from copy import deepcopy
 
 
+
 class EarlyStopping:
     def __init__(self, patience=7, mode="max", delta=0.001, verbose=False):
         self.patience = patience
@@ -48,7 +49,6 @@ class EarlyStopping:
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
 
-
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
     model.train()
@@ -83,7 +83,6 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
     return train_loss, train_outputs, train_targets
 
-
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []
@@ -109,7 +108,6 @@ def eval_fn(data_loader, model, criterion, device):
             fin_outputs.extend(outputs)
 
     return loss, fin_outputs, fin_targets
-
 
 def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
@@ -158,7 +156,6 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
         scheduler.step()
 
     return train_loss / num_data_point, train_outputs, train_targets
-
 
 def train_opacus(dataloader, model, criterion, optimizer, device, args):
     model.to(device)
