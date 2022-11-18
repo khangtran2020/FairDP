@@ -66,6 +66,14 @@ def run(args, current_time, device):
             for fold in range(args.folds):
                 run_fair_dpsgd_alg1(fold=fold, train_df=train_df, test_df=test_df, args=args, device=device,
                                     current_time=current_time)
+    elif args.mode == 'dpmanual':
+        if args.debug:
+            run_dpsgd_without_optimizer(fold=0, train_df=train_df, test_df=test_df, args=args, device=device,
+                                        current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_dpsgd_without_optimizer(fold=fold, train_df=train_df, test_df=test_df, args=args, device=device,
+                                            current_time=current_time)
 
 
 if __name__ == "__main__":
