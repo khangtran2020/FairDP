@@ -779,11 +779,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         scheduler_male.step(acc_male_score)
         scheduler_female.step(acc_female_score)
 
-        tk0.set_postfix(Train_Male_Loss=train_male_loss, Train_Male_ACC_SCORE=train_male_acc,
-                        Train_Female_Loss=train_female_loss,
-                        Train_Female_ACC_SCORE=train_female_acc, Valid_Male_Loss=val_male_loss,
-                        Valid_Male_ACC_SCORE=acc_male_score,
-                        Valid_Female_Loss=val_female_loss, Valid_Female_ACC_SCORE=acc_female_score)
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,Valid_ACC_SCORE=val_acc)
 
         history['train_male_history_loss'].append(train_male_loss)
         history['train_female_history_loss'].append(train_female_loss)
