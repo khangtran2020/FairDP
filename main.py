@@ -18,6 +18,20 @@ def run(args, current_time, device):
         args.input_dim = len(feature_cols)
         args.output_dim = 1
         print(feature_cols)
+    elif args.dataset == 'bank':
+        train_df, test_df, male_df, female_df, feature_cols, label = read_bank(args)
+        args.feature = feature_cols
+        args.target = label
+        args.input_dim = len(feature_cols)
+        args.output_dim = 1
+        print(feature_cols)
+    elif args.dataset == 'stroke':
+        train_df, test_df, male_df, female_df, feature_cols, label = read_stroke(args)
+        args.feature = feature_cols
+        args.target = label
+        args.input_dim = len(feature_cols)
+        args.output_dim = 1
+        print(feature_cols)
     # running process
     if args.mode == 'clean':
         if args.debug:

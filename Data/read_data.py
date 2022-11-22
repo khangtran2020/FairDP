@@ -81,6 +81,40 @@ def read_adult(args):
     female_df = train_df[train_df['sex'] == 0].copy()
     return train_df, test_df, male_df, female_df, feature_cols, label
 
+def read_bank(args):
+    df = pd.read_csv('Data/Bank/formated_bank.csv')
+    train_df = df[df['is_train'] == 1].reset_index(drop=True)
+    test_df = df[df['is_train'] == 0].reset_index(drop=True)
+    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
+    feature_cols = list(train_df.columns)
+    feature_cols.remove('y')
+    feature_cols.remove('z')
+    feature_cols.remove('label')
+    feature_cols.remove('is_train')
+    feature_cols.remove('intercept')
+    label = 'y'
+    fold_separation(male_df, args.folds, feature_cols, label)
+    fold_separation(female_df, args.folds, feature_cols, label)
+    fold_separation(train_df, args.folds, feature_cols, label)
+    return train_df, test_df, male_df, female_df, feature_cols, label
+
+def read_stroke(args):
+    df = pd.read_csv('Data/Stroke/formated_stroke.csv')
+    train_df = df[df['is_train'] == 1].reset_index(drop=True)
+    test_df = df[df['is_train'] == 0].reset_index(drop=True)
+    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
+    feature_cols = list(train_df.columns)
+    feature_cols.remove('y')
+    feature_cols.remove('z')
+    feature_cols.remove('is_train')
+    label = 'y'
+    fold_separation(male_df, args.folds, feature_cols, label)
+    fold_separation(female_df, args.folds, feature_cols, label)
+    fold_separation(train_df, args.folds, feature_cols, label)
+    return train_df, test_df, male_df, female_df, feature_cols, label
+
 def fold_separation(train_df, folds, feat_cols, label):
     skf = StratifiedKFold(n_splits=folds)
     train_df['fold'] = np.zeros(train_df.shape[0])
