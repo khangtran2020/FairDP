@@ -965,35 +965,35 @@ def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
 
     axs[0].plot(
         np.arange(num_epochs),
-        history['train_male_history_acc'],
+        history['train_history_acc'],
         '-o',
-        label='Train male ACC',
+        label='Train ACC',
         color='#ff7f0e'
     )
 
     axs[0].plot(
         np.arange(num_epochs),
-        history['val_male_history_acc'],
+        history['val_history_acc'],
         '--o',
-        label='Val male ACC',
+        label='Val ACC',
         color='#ff7f0e'
     )
 
-    axs[0].plot(
-        np.arange(num_epochs),
-        history['train_female_history_acc'],
-        '-*',
-        label='Train female ACC',
-        color='#1f77b4'
-    )
-
-    axs[0].plot(
-        np.arange(num_epochs),
-        history['val_female_history_acc'],
-        '--*',
-        label='Val female ACC',
-        color='#1f77b4'
-    )
+    # axs[0].plot(
+    #     np.arange(num_epochs),
+    #     history['train_female_history_acc'],
+    #     '-*',
+    #     label='Train female ACC',
+    #     color='#1f77b4'
+    # )
+    #
+    # axs[0].plot(
+    #     np.arange(num_epochs),
+    #     history['val_female_history_acc'],
+    #     '--*',
+    #     label='Val female ACC',
+    #     color='#1f77b4'
+    # )
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -1027,35 +1027,35 @@ def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
 
     axs[1].plot(
         np.arange(num_epochs),
-        history['train_male_history_loss'],
+        history['train_history_loss'],
         '-o',
-        label='Train male Loss',
+        label='Train Loss',
         color='#2ca02c'
     )
 
     axs[1].plot(
         np.arange(num_epochs),
-        history['val_male_history_loss'],
+        history['val_history_loss'],
         '--o',
-        label='Val male Loss',
+        label='Val Loss',
         color='#2ca02c'
     )
 
-    axs[1].plot(
-        np.arange(num_epochs),
-        history['train_female_history_loss'],
-        '-*',
-        label='Train female Loss',
-        color='#d62728'
-    )
-
-    axs[1].plot(
-        np.arange(num_epochs),
-        history['val_female_history_loss'],
-        '--*',
-        label='Val female Loss',
-        color='#d62728'
-    )
+    # axs[1].plot(
+    #     np.arange(num_epochs),
+    #     history['train_female_history_loss'],
+    #     '-*',
+    #     label='Train female Loss',
+    #     color='#d62728'
+    # )
+    #
+    # axs[1].plot(
+    #     np.arange(num_epochs),
+    #     history['val_female_history_loss'],
+    #     '--*',
+    #     label='Val female Loss',
+    #     color='#d62728'
+    # )
 
     axs[1].plot(
         np.arange(num_epochs),
