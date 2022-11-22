@@ -751,11 +751,11 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
         test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
 
-        prob_male, prob_female, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                                                     model=global_model, device=device)
-        male_tpr, female_tpr, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                                          female_loader=valid_female_loader,
-                                                          model=global_model, device=device)
+        # prob_male, prob_female, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+        #                                              model=global_model, device=device)
+        # male_tpr, female_tpr, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+        #                                                   female_loader=valid_female_loader,
+        #                                                   model=global_model, device=device)
 
         male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
                                                   female_loader=valid_female_loader,
@@ -795,12 +795,12 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['train_history_acc'].append(train_acc)
         history['val_history_loss'].append(valid_loss)
         history['val_history_acc'].append(val_acc)
-        history['prob_male'].append(prob_male)
-        history['prob_female'].append(prob_female)
-        history['demo_parity'].append(demo_p)
-        history['male_tpr'].append(male_tpr)
-        history['female_tpr'].append(female_tpr)
-        history['equal_odd'].append(equal_odd)
+        # history['prob_male'].append(prob_male)
+        # history['prob_female'].append(prob_female)
+        # history['demo_parity'].append(demo_p)
+        # history['male_tpr'].append(male_tpr)
+        # history['female_tpr'].append(female_tpr)
+        # history['equal_odd'].append(equal_odd)
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 

@@ -22,10 +22,10 @@ class NormNN(nn.Module):
         self.layer_2 = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.layer_1(x))
+        x1 = torch.nn.functional.relu(self.layer_1(x))
         # bound norm to 1
-        norm = torch.norm(x, dim=-1, keepdim=True).repeat(1, x.size(dim=-1))
-        x = torch.div(x, norm)
-        x = self.layer_2(x)
-        x = torch.nn.functional.sigmoid(x)
-        return x
+        norm = torch.norm(x1, dim=-1, keepdim=True).repeat(1, x1.size(dim=-1))
+        x2 = torch.div(x1, norm)
+        x3 = self.layer_2(x2)
+        x4 = torch.nn.functional.sigmoid(x3)
+        return x4
