@@ -24,7 +24,7 @@ class NormNN(nn.Module):
     def forward(self, x):
         x1 = torch.nn.functional.relu(self.layer_1(x))
         # bound norm to 1
-        norm = torch.norm(x1, dim=-1, keepdim=True).repeat(1, x1.size(dim=-1))
+        norm = torch.norm(x1, dim=-1, keepdim=True).repeat(1, x1.size(dim=-1)) + 1e-16
         x2 = torch.div(x1, norm)
         x3 = self.layer_2(x2)
         x4 = torch.nn.functional.sigmoid(x3)
