@@ -88,6 +88,14 @@ def run(args, current_time, device):
             for fold in range(args.folds):
                 run_dpsgd_without_optimizer(fold=fold, train_df=train_df, test_df=test_df, args=args, device=device,
                                             current_time=current_time)
+    elif args.mode == 'onebatch':
+        if args.debug:
+            run_fair_dpsgd_alg2_one_batch(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                                        current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd_alg2_one_batch(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                                            current_time=current_time)
 
 
 if __name__ == "__main__":

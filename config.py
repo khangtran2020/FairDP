@@ -6,7 +6,7 @@ def add_general_group(group):
     group.add_argument("--res_path", type=str, default="results/dict/", help="dir path for output file")
     group.add_argument("--plot_path", type=str, default="results/plot/", help="dir path for output file")
     group.add_argument("--seed", type=int, default=2605, help="seed value")
-    group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp', 'fair', 'proposed']")
+    group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp', 'fair', 'proposed', 'alg1', 'onebatch']")
 
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
