@@ -1578,13 +1578,12 @@ def run_opacus(fold, train_df, test_df, args, device, current_time):
     )
 
     # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    # sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
-        sampler=sampler,
         num_workers=0
     )
 

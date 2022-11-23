@@ -82,6 +82,7 @@ def read_adult(args):
     return train_df, test_df, male_df, female_df, feature_cols, label
 
 def read_bank(args):
+    # 3305
     df = pd.read_csv('Data/Bank/formated_bank.csv')
     train_df = df[df['is_train'] == 1].reset_index(drop=True)
     test_df = df[df['is_train'] == 0].reset_index(drop=True)
@@ -100,6 +101,7 @@ def read_bank(args):
     return train_df, test_df, male_df, female_df, feature_cols, label
 
 def read_stroke(args):
+    # 1436
     df = pd.read_csv('Data/Stroke/formated_stroke.csv')
     train_df = df[df['is_train'] == 1].reset_index(drop=True)
     test_df = df[df['is_train'] == 0].reset_index(drop=True)

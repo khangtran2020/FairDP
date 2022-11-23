@@ -4,7 +4,9 @@ from Data.datasets import *
 import datetime
 from Utils.running import *
 from Utils.utils import seed_everything
+from Model.models import NeuralNetwork
 import warnings
+import torch
 
 warnings.filterwarnings("ignore")
 
@@ -96,6 +98,38 @@ def run(args, current_time, device):
             for fold in range(args.folds):
                 run_fair_dpsgd_alg2_one_batch(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
                                             current_time=current_time)
+    elif args.mode == 'test':
+        train_dataset = Adult(
+            train_df[args.feature].values,
+            train_df[args.target].values
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            pin_memory=True,
+            drop_last=True,
+            num_workers=0
+        )
+
+        # Defining Model for specific fold
+        model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+        model.to(device)
+
+        # DEfining criterion
+        criterion = torch.nn.BCELoss()
+        criterion.to(device)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+        privacy_engine = PrivacyEngine()
+        model, optimizer, train_loader = privacy_engine.make_private_with_epsilon(
+            module=model,
+            optimizer=optimizer,
+            data_loader=train_loader,
+            epochs=args.epochs,
+            target_epsilon=args.tar_eps,
+            target_delta=args.tar_delt,
+            max_grad_norm=args.clip,
+        )
+        print(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
 
 
 if __name__ == "__main__":
