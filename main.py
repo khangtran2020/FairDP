@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore")
 
 def run(args, current_time, device):
     # read data
+    print('Using noise scale: {}, clip: {}'.format(args.ns, args.clip))
     if args.dataset == 'adult':
         train_df, test_df, male_df, female_df, feature_cols, label = read_adult(args)
         args.feature = feature_cols
