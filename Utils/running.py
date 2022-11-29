@@ -660,6 +660,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         drop_last=False,
     )
 
+    args.n_batch = len(train_dataset)
+
     # Defining Model for specific fold
     model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
