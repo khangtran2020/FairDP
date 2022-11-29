@@ -25,6 +25,7 @@ def add_model_group(group):
     group.add_argument("--debug", type=bool, default=True)
     group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')
     group.add_argument("--num_workers", type=int, default=0)
+    group.add_argument("--confidence", type=float, default=0.95, help='Confidence rate')
 
 def add_opacus_group(group):
     group.add_argument("--tar_eps", type=float, default=1.0, help="learning rate")

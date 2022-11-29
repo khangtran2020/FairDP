@@ -107,7 +107,6 @@ def print_history(fold, history, num_epochs, args, current_time):
     axs[1].legend()
     plt.savefig(save_name)
 
-
 def print_history_fair(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
     save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
@@ -272,7 +271,6 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
 
     axs[3].legend()
     plt.savefig(save_name)
-
 
 def print_history_fair_(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
@@ -503,7 +501,6 @@ def print_history_fair_(fold, history, num_epochs, args, current_time):
     axs[2].legend()
     plt.savefig(save_name)
 
-
 def print_history_fair_v2(fold, history, num_epochs, args, current_time):
     save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
                                                                                         args.ns,
@@ -703,7 +700,6 @@ def print_history_fair_v2(fold, history, num_epochs, args, current_time):
 
     axs[2].legend()
     plt.savefig(save_name)
-
 
 def print_history_fair_v3(fold, history, num_epochs, args, current_time):
     save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
@@ -948,7 +944,6 @@ def print_history_fair_v3(fold, history, num_epochs, args, current_time):
 
     axs[2].legend()
     plt.savefig(save_name)
-
 
 def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))

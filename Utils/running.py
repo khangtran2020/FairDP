@@ -6,6 +6,7 @@ from Utils.train_eval import *
 from Utils.plottings import *
 from sklearn.metrics import accuracy_score
 from Utils.metrics import *
+from Utils.utils import count_parameters
 from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
@@ -474,6 +475,8 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
     model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
+    args.num_params = count_parameters(model)
+
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
@@ -665,6 +668,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     model_male.to(device)
     model_female.to(device)
     global_model.to(device)
+
+    args.num_params = count_parameters(global_model)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
@@ -1414,6 +1419,8 @@ def run_fair_dpsgd_alg1(fold, male_df, female_df, test_df, args, device, current
     model_male.to(device)
     model_female.to(device)
     global_model.to(device)
+
+    args.num_params = count_parameters(global_model)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
