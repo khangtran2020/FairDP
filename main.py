@@ -111,6 +111,15 @@ def run(args, current_time, device):
                                           accountant='rdp')
         print("Noise scale male: {}, Noise scale female: {}".format(sigma_male, sigma_female))
         print("Noise scale to use: {}".format(max(sigma_male, sigma_female)))
+    elif args.mode == 'testdp':
+        if args.debug:
+            run_fair_dpsgd_test(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                                current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd_test(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args,
+                                    device=device,
+                                    current_time=current_time)
 
 
 if __name__ == "__main__":
