@@ -2035,6 +2035,9 @@ def run_fair_dpsgd_alg2_one_batch(fold, male_df, female_df, test_df, args, devic
     model_female.to(device)
     global_model.to(device)
 
+    args.num_params = count_parameters(global_model)
+    print("Number of params: {}".format(args.num_params))
+
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
