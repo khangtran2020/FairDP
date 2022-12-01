@@ -5,9 +5,10 @@ from Utils.utils import *
 
 def print_history(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
                                                                                         args.ns,
                                                                                         args.clip,
+                                                                                        args.epochs,
                                                                                         current_time.day,
                                                                                         current_time.month,
                                                                                         current_time.year,
@@ -109,15 +110,17 @@ def print_history(fold, history, num_epochs, args, current_time):
 
 def print_history_fair(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
@@ -235,15 +238,17 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
 
 def print_history_fair_(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
@@ -463,15 +468,17 @@ def print_history_fair_(fold, history, num_epochs, args, current_time):
     plt.savefig(save_name)
 
 def print_history_fair_v2(fold, history, num_epochs, args, current_time):
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     # axs[0].plot(
@@ -663,15 +670,17 @@ def print_history_fair_v2(fold, history, num_epochs, args, current_time):
     plt.savefig(save_name)
 
 def print_history_fair_v3(fold, history, num_epochs, args, current_time):
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
@@ -908,15 +917,17 @@ def print_history_fair_v3(fold, history, num_epochs, args, current_time):
 
 def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
@@ -1146,15 +1157,17 @@ def print_history_fair_alg1(fold, history, num_epochs, args, current_time):
 
 def print_history_fair_v4(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset, args.mode, fold,
-                                                                                        args.ns,
-                                                                                        args.clip,
-                                                                                        current_time.day,
-                                                                                        current_time.month,
-                                                                                        current_time.year,
-                                                                                        current_time.hour,
-                                                                                        current_time.minute,
-                                                                                        current_time.second)
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
     fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
