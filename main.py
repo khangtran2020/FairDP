@@ -67,6 +67,14 @@ def run(args, current_time, device):
             for fold in range(args.folds):
                 run_fair(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
                             current_time=current_time)
+    elif args.mode == 'fairdp':
+        if args.debug:
+            run_fair_dpsgd(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                        current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                            current_time=current_time)
     elif args.mode == 'proposed':
         if args.debug:
             run_fair_dpsgd_alg2(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
@@ -112,10 +120,10 @@ def run(args, current_time, device):
                                               current_time=current_time)
     elif args.mode == 'test':
         sigma_male = get_noise_multiplier(target_epsilon=args.tar_eps, target_delta=args.tar_delt,
-                                          sample_rate=args.batch_size / len(male_df), epochs=None, steps=args.epochs,
+                                          sample_rate=args.batch_size / len(male_df), epochs=args.epochs,
                                           accountant='rdp')
         sigma_female = get_noise_multiplier(target_epsilon=args.tar_eps, target_delta=args.tar_delt,
-                                          sample_rate=args.batch_size / len(female_df), epochs=None, steps=args.epochs,
+                                          sample_rate=args.batch_size / len(female_df), epochs=args.epochs,
                                           accountant='rdp')
         print("Noise scale male: {}, Noise scale female: {}".format(sigma_male, sigma_female))
         print("Noise scale to use: {}".format(max(sigma_male, sigma_female)))

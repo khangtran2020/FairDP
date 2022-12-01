@@ -480,7 +480,7 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
                                                            threshold=0.0001, threshold_mode='rel',
                                                            cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    # es = EarlyStopping(patience=args.patience, verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -490,11 +490,7 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
         'val_history_acc': [],
         'test_history_loss': [],
         'test_history_acc': [],
-        'prob_male': [],
-        'prob_female': [],
         'demo_parity': [],
-        'male_tpr': [],
-        'female_tpr': [],
         'equal_odd': []
     }
 
@@ -506,9 +502,9 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
                                                               noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
-        prob_male, prob_female, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                                      model=model, device=device)
-        male_tpr, female_tpr, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
                                                           female_loader=valid_female_loader, model=model, device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
@@ -525,18 +521,14 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
         history['val_history_acc'].append(acc_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-        history['prob_male'].append(prob_male)
-        history['prob_female'].append(prob_female)
         history['demo_parity'].append(demo_p)
-        history['male_tpr'].append(male_tpr)
-        history['female_tpr'].append(female_tpr)
         history['equal_odd'].append(equal_odd)
 
-        es(acc_score, model, args.save_path+f'model_{fold}.bin')
-
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history_fair(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
