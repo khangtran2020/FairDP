@@ -22,7 +22,7 @@ def bound_alg1(args):
     return args.epochs * args.lr * (2 * args.clip + 8 * args.clip ** 2 * args.ns ** 2) / 2
 
 def save_res(fold, args, dct, current_time):
-    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+    save_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
                                                                                                   args.mode, fold,
                                                                                                   args.ns,
                                                                                                   args.clip,

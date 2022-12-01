@@ -11,6 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
 from opacus import PrivacyEngine
+from opacus.accountants import create_accountant
 # from pyvacy import optim, analysis
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
@@ -2452,4 +2453,165 @@ def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current
         #     break
 
     print_history_fair_v4(fold,history,epoch+1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
+    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
+        drop=True)
+    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
+        drop=True)
+    df_val_mal = male_df[male_df.fold == fold]
+    df_val_fem = female_df[female_df.fold == fold]
+
+    # Defining DataSet
+    train_dataset = Adult(
+        df_train[args.feature].values,
+        df_train[args.target].values
+    )
+
+    valid_dataset = Adult(
+        df_valid[args.feature].values,
+        df_valid[args.target].values
+    )
+
+    test_dataset = Adult(
+        test_df[args.feature].values,
+        test_df[args.target].values
+    )
+
+    valid_male_dataset = Adult(
+        df_val_mal[args.feature].values,
+        df_val_mal[args.target].values
+    )
+
+    valid_female_dataset = Adult(
+        df_val_fem[args.feature].values,
+        df_val_fem[args.target].values
+    )
+
+    # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        drop_last=True,
+        sampler=sampler,
+        num_workers=0
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    valid_male_loader = torch.utils.data.DataLoader(
+        valid_male_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    valid_female_loader = torch.utils.data.DataLoader(
+        valid_female_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    # Defining Device
+
+    # Defining Model for specific fold
+    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model.to(device)
+
+    args.num_params = count_parameters(model)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    # Defining LR SCheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+                                                           factor=0.1, patience=10, verbose=True,
+                                                           threshold=0.0001, threshold_mode='rel',
+                                                           cooldown=0, min_lr=0, eps=1e-08)
+    # DEfining Early Stopping Object
+    # es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'demo_parity': [],
+        'equal_odd': [],
+        'epsilon': []
+    }
+
+    accountant = create_accountant(mechanism='rdp')
+    sampler_rate = args.batch_size / len(df_train)
+
+    # THE ENGINE LOOP
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
+                                                              scheduler=None, clipping=args.clip,
+                                                              noise_scale=args.ns)
+        val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
+        test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                                                     model=model, device=device)
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                                          female_loader=valid_female_loader, model=model, device=device)
+        train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
+        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+
+        scheduler.step(acc_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
+                        Valid_ACC_SCORE=acc_score)
+
+        steps = int((epoch+1) / sampler_rate)
+        accountant.history = [(args.ns, sampler_rate, steps)]
+        eps = accountant.get_epsilon(delta=args.tar_delt)
+
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(val_loss)
+        history['val_history_acc'].append(acc_score)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['demo_parity'].append(demo_p)
+        history['equal_odd'].append(equal_odd)
+        history['epsilon'].append(eps)
+        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
+
+    print_history_fair_dp(fold,history,epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

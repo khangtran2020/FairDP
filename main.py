@@ -75,6 +75,14 @@ def run(args, current_time, device):
             for fold in range(args.folds):
                 run_fair_dpsgd(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
                             current_time=current_time)
+    elif args.mode == 'fairdp_epoch':
+        if args.debug:
+            run_fair_dp(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                        current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dp(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                            current_time=current_time)
     elif args.mode == 'proposed':
         if args.debug:
             run_fair_dpsgd_alg2(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
