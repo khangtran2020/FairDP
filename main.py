@@ -61,11 +61,11 @@ def run(args, current_time, device):
                           current_time=current_time)
     elif args.mode == 'fair':
         if args.debug:
-            run_fair_v2(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+            run_fair(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
                         current_time=current_time)
         else:
             for fold in range(args.folds):
-                run_fair_v2(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                run_fair(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
                             current_time=current_time)
     elif args.mode == 'proposed':
         if args.debug:
