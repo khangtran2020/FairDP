@@ -328,7 +328,7 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
                                                            threshold=0.0001, threshold_mode='rel',
                                                            cooldown=0, min_lr=0, eps=1e-08)
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    # es = EarlyStopping(patience=args.patience, verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -336,11 +336,7 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         'train_history_acc': [],
         'val_history_loss': [],
         'val_history_acc': [],
-        'prob_male': [],
-        'prob_female': [],
         'demo_parity': [],
-        'male_tpr': [],
-        'female_tpr': [],
         'equal_odd': [],
         'test_history_loss': [],
         'test_history_acc': [],
@@ -370,20 +366,16 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         history['train_history_acc'].append(train_acc)
         history['val_history_loss'].append(val_loss)
         history['val_history_acc'].append(acc_score)
-        history['prob_male'].append(prob_male)
-        history['prob_female'].append(prob_female)
         history['demo_parity'].append(demo_p)
-        history['male_tpr'].append(male_tpr)
-        history['female_tpr'].append(female_tpr)
         history['equal_odd'].append(equal_odd)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
 
-        es(acc_score, model, args.save_path+f'model_{fold}.bin')
-
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history_fair(fold,history, epoch+1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

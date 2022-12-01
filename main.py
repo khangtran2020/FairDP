@@ -1,10 +1,8 @@
 from config import parse_args
 from Data.read_data import *
-from Data.datasets import *
 import datetime
 from Utils.running import *
-from Utils.utils import seed_everything
-from Model.models import NeuralNetwork
+from Utils.utils import *
 import warnings
 import torch
 from opacus.accountants.utils import get_noise_multiplier
@@ -15,6 +13,16 @@ warnings.filterwarnings("ignore")
 def run(args, current_time, device):
     # read data
     print('Using noise scale: {}, clip: {}'.format(args.ns, args.clip))
+    # set fair metric
+    # 'equal_opp', 'demo_parity', 'disp_imp'
+    args.fair_metric_name = args.fair_metric
+    if args.fair_metric == 'equal_opp':
+        args.fair_metric = equality_of_odd
+    elif args.fair_metric == 'demo_parity':
+        args.fair_metric = demo_parity
+    else:
+        args.fair_metric = disperate_impact
+
     if args.dataset == 'adult':
         train_df, test_df, male_df, female_df, feature_cols, label = read_adult(args)
         args.feature = feature_cols

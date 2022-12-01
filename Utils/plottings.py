@@ -118,7 +118,7 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
                                                                                         current_time.hour,
                                                                                         current_time.minute,
                                                                                         current_time.second)
-    fig, axs = plt.subplots(1, 4, figsize=(22, 5))
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -213,63 +213,24 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        history['prob_male'],
-        '-o',
-        label='P(Y = 1| Male)',
-        color='#2ca02c'
-    )
-
-    axs[2].plot(
-        np.arange(num_epochs),
-        history['prob_female'],
-        '-o',
-        label='P(Y = 1| Female)',
-        color='#d62728'
-    )
-
-    axs[2].plot(
-        np.arange(num_epochs),
         history['demo_parity'],
         '-o',
         label='Demographic Parity',
         color='blue'
     )
-
-    axs[2].set_ylabel('Prob/Demographic Parity', size=14)
+    axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
     axs[2].set_xlabel('Epochs', size=14)
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
 
-    axs[2].legend()
-
-    axs[3].plot(
-        np.arange(num_epochs),
-        history['male_tpr'],
-        '-o',
-        label='Male TPR',
-        color='#2ca02c'
-    )
-
-    axs[3].plot(
-        np.arange(num_epochs),
-        history['female_tpr'],
-        '-o',
-        label='Female TPR',
-        color='#d62728'
-    )
-
-    axs[3].plot(
+    ax2 = axs[2].twinx()
+    ax2.plot(
         np.arange(num_epochs),
         history['equal_odd'],
-        '-o',
+        '--*',
         label='Equality of Odds',
-        color='blue'
+        color='red'
     )
-
-    axs[3].set_ylabel('TPR/Equality of Odds', size=14)
-    axs[3].set_xlabel('Epochs', size=14)
-    axs[3].set_title(f'FOLD {fold + 1}', size=18)
-
-    axs[3].legend()
+    ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
     plt.savefig(save_name)
 
 def print_history_fair_(fold, history, num_epochs, args, current_time):

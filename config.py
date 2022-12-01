@@ -6,11 +6,14 @@ def add_general_group(group):
     group.add_argument("--res_path", type=str, default="results/dict/", help="dir path for output file")
     group.add_argument("--plot_path", type=str, default="results/plot/", help="dir path for output file")
     group.add_argument("--seed", type=int, default=2605, help="seed value")
-    group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp', 'fair', 'proposed', 'alg1', 'onebatch']")
+    group.add_argument("--mode", type=str, default='clean',
+                       help="Mode of running ['clean', 'dp', 'fair', 'proposed', 'alg1', 'onebatch']")
+    group.add_argument("--fair_metric", type=str, default='equal_opp',
+                       help="Metrics of fairness ['equal_opp', 'demo_parity', 'disp_imp']")
 
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
-    group.add_argument('--dataset', type=str, default='adult',help="name of dataset")
+    group.add_argument('--dataset', type=str, default='adult', help="name of dataset")
 
 def add_model_group(group):
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
@@ -31,7 +34,6 @@ def add_opacus_group(group):
     group.add_argument("--tar_eps", type=float, default=1.0, help="learning rate")
     group.add_argument('--tar_delt', type=float, default=1e-4, help='number of folds for cross-validation')
     group.add_argument('--MAX_PHYSICAL_BATCH_SIZE', type=int, default=128, help="batch size for training process")
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
