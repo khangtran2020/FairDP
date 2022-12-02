@@ -819,11 +819,10 @@ def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current
     print_history_fair_v4(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
-def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
-    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
-        drop=True)
-    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
-        drop=True)
+def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, current_time):
+    df_train = train_df[train_df.fold != fold]
+    df_valid = train_df[train_df.fold == fold]
+
     df_val_mal = male_df[male_df.fold == fold]
     df_val_fem = female_df[female_df.fold == fold]
 
@@ -838,11 +837,6 @@ def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
         df_valid[args.target].values
     )
 
-    test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
-    )
-
     valid_male_dataset = Adult(
         df_val_mal[args.feature].values,
         df_val_mal[args.target].values
@@ -851,6 +845,11 @@ def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
     valid_female_dataset = Adult(
         df_val_fem[args.feature].values,
         df_val_fem[args.target].values
+    )
+
+    test_dataset = Adult(
+        test_df[args.feature].values,
+        test_df[args.target].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -867,7 +866,7 @@ def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
         batch_size=args.batch_size,
-        num_workers=4,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         drop_last=False,
@@ -876,7 +875,7 @@ def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=args.batch_size,
-        num_workers=4,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         drop_last=False,
@@ -903,7 +902,7 @@ def run_fair_dp(fold, male_df, female_df, test_df, args, device, current_time):
     # Defining Device
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     args.num_params = count_parameters(model)

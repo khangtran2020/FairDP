@@ -72,12 +72,14 @@ def run(args, current_time, device):
                                current_time=current_time)
     elif args.mode == 'fairdp_epoch':
         if args.debug:
-            run_fair_dp(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
-                        current_time=current_time)
+            run_fair_dp(fold=0, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df, args=args,
+                           device=device,
+                           current_time=current_time)
         else:
             for fold in range(args.folds):
-                run_fair_dp(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
-                            current_time=current_time)
+                run_fair_dp(fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df, args=args,
+                           device=device,
+                           current_time=current_time)
     elif args.mode == 'test':
         sigma = get_noise_multiplier(target_epsilon=args.tar_eps, target_delta=args.tar_delt,
                                      sample_rate=args.batch_size / len(train_df), epochs=args.epochs,
