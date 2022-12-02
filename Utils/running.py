@@ -422,6 +422,7 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
         batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
+        # sampler=sampler,
         num_workers=0
     )
 
