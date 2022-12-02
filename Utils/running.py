@@ -315,7 +315,7 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
     )
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
 
     # DEfining criterion
@@ -416,13 +416,12 @@ def run_fair_dpsgd(fold, male_df, female_df, test_df, args, device, current_time
     )
 
     # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    # sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
-        sampler=sampler,
         num_workers=0
     )
 
