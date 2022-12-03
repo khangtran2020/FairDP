@@ -388,7 +388,9 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         'equal_odd': [],
         'test_history_loss': [],
         'test_history_acc': [],
-        'best_test': 0
+        'best_test': 0,
+        'best_demo_parity': 0,
+        'best_equal_odd': 0
     }
 
     # THE ENGINE LOOP
@@ -398,9 +400,9 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
-        prob_male, prob_female, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                                      model=model, device=device)
-        male_tpr, female_tpr, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
                                                           female_loader=valid_female_loader, model=model, device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
@@ -428,7 +430,13 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                                                 model=model, device=device)
+    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                                      female_loader=valid_female_loader, model=model, device=device)
     history['best_test'] = test_acc
+    history['best_demo_parity'] = demo_p
+    history['best_equal_odd'] = equal_odd
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
@@ -547,11 +555,13 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         'train_history_acc': [],
         'val_history_loss': [],
         'val_history_acc': [],
-        'test_history_loss': [],
-        'test_history_acc': [],
         'demo_parity': [],
         'equal_odd': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
         'best_test': 0,
+        'best_demo_parity': 0,
+        'best_equal_odd': 0
     }
 
     # THE ENGINE LOOP
@@ -596,7 +606,13 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                               model=model, device=device)
+    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                      female_loader=valid_female_loader, model=model, device=device)
     history['best_test'] = test_acc
+    history['best_demo_parity'] = demo_p
+    history['best_equal_odd'] = equal_odd
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
@@ -725,6 +741,8 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         'equal_odd': [],
         'epsilon': [],
         'best_test': 0,
+        'best_demo_parity': 0,
+        'best_equal_odd': 0
     }
 
     accountant = create_accountant(mechanism='rdp')
@@ -772,7 +790,13 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                               model=model, device=device)
+    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                      female_loader=valid_female_loader, model=model, device=device)
     history['best_test'] = test_acc
+    history['best_demo_parity'] = demo_p
+    history['best_equal_odd'] = equal_odd
     print_history_fair_dp(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
