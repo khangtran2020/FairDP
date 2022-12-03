@@ -17,7 +17,7 @@ from opacus.accountants import create_accountant
 # from pyvacy import optim, analysis
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
-    model_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                                  args.mode, fold,
                                                                                                  args.ns,
                                                                                                  args.clip,
@@ -142,7 +142,7 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
 
 def run_dpsgd(fold, train_df, test_df, args, device, current_time):
 
-    model_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                              args.mode, fold,
                                                                                              args.ns,
                                                                                              args.clip,
@@ -272,7 +272,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
-    model_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                                  args.mode, fold,
                                                                                                  args.ns,
                                                                                                  args.clip,
@@ -427,6 +427,7 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
+
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
@@ -441,7 +442,7 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                                  args.mode, fold,
                                                                                                  args.ns,
                                                                                                  args.clip,
@@ -617,7 +618,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                                  args.mode, fold,
                                                                                                  args.ns,
                                                                                                  args.clip,
