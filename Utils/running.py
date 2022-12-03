@@ -287,6 +287,10 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         drop=True)
     df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
         drop=True)
+
+    df_train_mal = male_df[male_df.fold != fold]
+    df_train_fem = female_df[female_df.fold != fold]
+
     df_val_mal = male_df[male_df.fold == fold]
     df_val_fem = female_df[female_df.fold == fold]
 
@@ -304,6 +308,16 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
     valid_dataset = Adult(
         df_valid[args.feature].values,
         df_valid[args.target].values
+    )
+
+    train_male_dataset = Adult(
+        df_train_mal[args.feature].values,
+        df_train_mal[args.target].values
+    )
+
+    train_female_dataset = Adult(
+        df_train_fem[args.feature].values,
+        df_train_fem[args.target].values
     )
 
     valid_male_dataset = Adult(
@@ -343,6 +357,24 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         drop_last=False,
     )
 
+    train_male_loader = DataLoader(
+        train_male_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    train_female_loader = DataLoader(
+        train_female_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
     valid_male_loader = DataLoader(
         valid_male_dataset,
         batch_size=args.batch_size,
@@ -363,18 +395,33 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
 
     # Defining Model for specific fold
     model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model.to(device)
+    model_male.to(device)
+    model_female.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
                                                            factor=0.1, patience=10, verbose=True,
                                                            threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=0, eps=1e-08)
+                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
+    scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+                                                           factor=0.1, patience=10, verbose=True,
+                                                           threshold=0.0001, threshold_mode='rel',
+                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
+    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+                                                                factor=0.1, patience=10, verbose=True,
+                                                                threshold=0.0001, threshold_mode='rel',
+                                                                cooldown=0, min_lr=1e-4, eps=1e-08)
+
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
@@ -386,16 +433,22 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
         'val_history_acc': [],
         'demo_parity': [],
         'equal_odd': [],
+        'disp_imp': [],
         'test_history_loss': [],
         'test_history_acc': [],
         'best_test': 0,
         'best_demo_parity': 0,
-        'best_equal_odd': 0
+        'best_equal_odd': 0,
+        'best_disp_imp': 0,
     }
 
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
+        train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
+                                                        scheduler=None)
+        train_male_loss, train_male_out, train_male_targets = train_fn(male_loader, model, criterion, optimizer, device,
+                                                        scheduler=None)
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
@@ -404,6 +457,14 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
                                                      model=model, device=device)
         _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
                                                           female_loader=valid_female_loader, model=model, device=device)
+        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                                  female_loader=valid_female_loader,
+                                                  global_model=model,
+                                                  male_model=model_male,
+                                                  female_model=model_female,
+                                                  num_male=len(df_val_mal),
+                                                  num_female=len(df_val_fem),
+                                                  device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
@@ -435,6 +496,14 @@ def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
                                                  model=model, device=device)
     _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
                                                       female_loader=valid_female_loader, model=model, device=device)
+    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                            female_loader=valid_female_loader,
+                                            global_model=model,
+                                            male_model=model_male,
+                                            female_model=model_female,
+                                            num_male=len(df_val_mal),
+                                            num_female=len(df_val_fem),
+                                            device=device)
     history['best_test'] = test_acc
     history['best_demo_parity'] = demo_p
     history['best_equal_odd'] = equal_odd

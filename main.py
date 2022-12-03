@@ -6,6 +6,8 @@ from Utils.utils import *
 import warnings
 import torch
 from opacus.accountants.utils import get_noise_multiplier
+from opacus import PrivacyEngine
+from opacus.accountants import create_accountant
 
 warnings.filterwarnings("ignore")
 
@@ -85,15 +87,23 @@ def run(args, current_time, device):
                                      sample_rate=args.batch_size / len(train_df), epochs=args.epochs,
                                      accountant='rdp')
         print("Noise scale to use: {}".format(sigma))
-    elif args.mode == 'testdp':
-        if args.debug:
-            run_fair_dpsgd_test(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
-                                current_time=current_time)
-        else:
-            for fold in range(args.folds):
-                run_fair_dpsgd_test(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args,
-                                    device=device,
-                                    current_time=current_time)
+    elif args.mode == 'geteps':
+        print(len(train_df))
+        accountant = create_accountant(mechanism='rdp')
+        sampler_rate = args.batch_size / len(train_df)
+        steps = int((args.epochs + 1) / sampler_rate)
+        accountant.history = [(args.ns, sampler_rate, steps)]
+        eps = accountant.get_epsilon(delta=args.tar_delt)
+        print("Epsilon used: {}".format(eps))
+    # elif args.mode == 'testdp':
+    #     if args.debug:
+    #         run_fair_dpsgd_test(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+    #                             current_time=current_time)
+    #     else:
+    #         for fold in range(args.folds):
+    #             run_fair_dpsgd_test(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args,
+    #                                 device=device,
+    #                                 current_time=current_time)
 
 
 if __name__ == "__main__":
