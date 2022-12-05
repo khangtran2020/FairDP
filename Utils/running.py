@@ -948,11 +948,14 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
-                                 scheduler=None)
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
         _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
-                                 scheduler=None)
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
         train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
-                                                              scheduler=None)
+                                                              scheduler=None, clipping=args.clip,
+                                                              noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
