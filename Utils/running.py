@@ -1019,6 +1019,8 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     print_history_fair_dp(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
+
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):
 #     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
 #         drop=True)
