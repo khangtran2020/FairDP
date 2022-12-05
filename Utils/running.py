@@ -1000,7 +1000,7 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
         history['epsilon'].append(eps)
-        es(acc_score, model, args.save_path + f'model_{fold}.bin')
+        es(acc_score, model, args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
