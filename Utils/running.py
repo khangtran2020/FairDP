@@ -17,17 +17,17 @@ from opacus.accountants import create_accountant
 # from pyvacy import optim, analysis
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
-    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                                 args.mode, fold,
-                                                                                                 args.ns,
-                                                                                                 args.clip,
-                                                                                                 args.epochs,
-                                                                                                 current_time.day,
-                                                                                                 current_time.month,
-                                                                                                 current_time.year,
-                                                                                                 current_time.hour,
-                                                                                                 current_time.minute,
-                                                                                                 current_time.second)
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
     df_train = train_df[train_df.fold != fold]
     df_valid = train_df[train_df.fold == fold]
 
@@ -140,19 +140,19 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
     history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
-def run_dpsgd(fold, train_df, test_df, args, device, current_time):
 
-    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                             args.mode, fold,
-                                                                                             args.ns,
-                                                                                             args.clip,
-                                                                                             args.epochs,
-                                                                                             current_time.day,
-                                                                                             current_time.month,
-                                                                                             current_time.year,
-                                                                                             current_time.hour,
-                                                                                             current_time.minute,
-                                                                                             current_time.second)
+def run_dpsgd(fold, train_df, test_df, args, device, current_time):
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
 
     df_train = train_df[train_df.fold != fold]
     df_valid = train_df[train_df.fold == fold]
@@ -258,7 +258,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
 
-        es(acc_score, model, args.save_path+model_name)
+        es(acc_score, model, args.save_path + model_name)
 
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -271,18 +271,19 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     print_history(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                                 args.mode, fold,
-                                                                                                 args.ns,
-                                                                                                 args.clip,
-                                                                                                 args.epochs,
-                                                                                                 current_time.day,
-                                                                                                 current_time.month,
-                                                                                                 current_time.year,
-                                                                                                 current_time.hour,
-                                                                                                 current_time.minute,
-                                                                                                 current_time.second)
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
     df_train = train_df[train_df.fold != fold]
     df_valid = train_df[train_df.fold == fold]
 
@@ -412,13 +413,13 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
                                                            threshold=0.0001, threshold_mode='rel',
                                                            cooldown=0, min_lr=1e-4, eps=1e-08)
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
-    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
                                                                 factor=0.1, patience=10, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
                                                                 cooldown=0, min_lr=1e-4, eps=1e-08)
+    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+                                                                  factor=0.1, patience=10, verbose=True,
+                                                                  threshold=0.0001, threshold_mode='rel',
+                                                                  cooldown=0, min_lr=1e-4, eps=1e-08)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
@@ -444,9 +445,9 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         _, _, _ = train_fn(train_male_loader, model_male, criterion, optimizer_male, device,
-                                                        scheduler=None)
+                           scheduler=None)
         _, _, _ = train_fn(train_female_loader, model_female, criterion, optimizer_female, device,
-                                                                       scheduler=None)
+                           scheduler=None)
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
@@ -454,9 +455,9 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
         test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                                                     model=model, device=device)
+                                   model=model, device=device)
         _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                                          female_loader=valid_female_loader, model=model, device=device)
+                                          female_loader=valid_female_loader, model=model, device=device)
         male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
                                                   female_loader=valid_female_loader,
                                                   global_model=model,
@@ -476,7 +477,6 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         scheduler_male.step(male_acc_score)
         scheduler_female.step(female_acc_score)
 
-
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
                         Valid_ACC_SCORE=acc_score)
 
@@ -486,11 +486,11 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         history['val_history_acc'].append(acc_score)
         history['demo_parity'].append(demo_p)
         history['equal_odd'].append(equal_odd)
-        history['disp_imp'].append(max(male_norm,female_norm))
+        history['disp_imp'].append(max(male_norm, female_norm))
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
 
-        es(acc_score, model, args.save_path+model_name)
+        es(acc_score, model, args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -500,17 +500,17 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                                                 model=model, device=device)
+                               model=model, device=device)
     _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                                      female_loader=valid_female_loader, model=model, device=device)
+                                      female_loader=valid_female_loader, model=model, device=device)
     male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                            female_loader=valid_female_loader,
-                                            global_model=model,
-                                            male_model=model_male,
-                                            female_model=model_female,
-                                            num_male=len(df_val_mal),
-                                            num_female=len(df_val_fem),
-                                            device=device)
+                                              female_loader=valid_female_loader,
+                                              global_model=model,
+                                              male_model=model_male,
+                                              female_model=model_female,
+                                              num_male=len(df_val_mal),
+                                              num_female=len(df_val_fem),
+                                              device=device)
     history['best_test'] = test_acc
     history['best_demo_parity'] = demo_p
     history['best_equal_odd'] = equal_odd
@@ -518,18 +518,19 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                                 args.mode, fold,
-                                                                                                 args.ns,
-                                                                                                 args.clip,
-                                                                                                 args.epochs,
-                                                                                                 current_time.day,
-                                                                                                 current_time.month,
-                                                                                                 current_time.year,
-                                                                                                 current_time.hour,
-                                                                                                 current_time.minute,
-                                                                                                 current_time.second)
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
 
     df_train = train_df[train_df.fold != fold]
     df_valid = train_df[train_df.fold == fold]
@@ -693,11 +694,14 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
-                           scheduler=None)
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
         _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
-                           scheduler=None)
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
         train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
-                                                        scheduler=None)
+                                                              scheduler=None, clipping=args.clip,
+                                                              noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
@@ -738,7 +742,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
 
-        es(acc_score, model, args.save_path+model_name)
+        es(acc_score, model, args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -765,18 +769,19 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                                 args.mode, fold,
-                                                                                                 args.ns,
-                                                                                                 args.clip,
-                                                                                                 args.epochs,
-                                                                                                 current_time.day,
-                                                                                                 current_time.month,
-                                                                                                 current_time.year,
-                                                                                                 current_time.hour,
-                                                                                                 current_time.minute,
-                                                                                                 current_time.second)
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
 
     df_train = train_df[train_df.fold != fold]
     df_valid = train_df[train_df.fold == fold]
@@ -943,11 +948,11 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
         _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
-                           scheduler=None)
+                                 scheduler=None)
         _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
-                           scheduler=None)
+                                 scheduler=None)
         train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
-                                                        scheduler=None)
+                                                              scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
@@ -992,7 +997,7 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
         history['epsilon'].append(eps)
-        es(acc_score, model, args.save_path+f'model_{fold}.bin')
+        es(acc_score, model, args.save_path + f'model_{fold}.bin')
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -1018,8 +1023,6 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair_dp(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
-
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):
 #     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
