@@ -692,11 +692,11 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     i = 0
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        _, _, _ = train_fn(train_male_loader, model_male, criterion, optimizer_male, device,
+        _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
                            scheduler=None)
-        _, _, _ = train_fn(train_female_loader, model_female, criterion, optimizer_female, device,
+        _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
                            scheduler=None)
-        train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
+        train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
@@ -942,11 +942,11 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        _, _, _ = train_fn(train_male_loader, model_male, criterion, optimizer_male, device,
+        _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
                            scheduler=None)
-        _, _, _ = train_fn(train_female_loader, model_female, criterion, optimizer_female, device,
+        _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
                            scheduler=None)
-        train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
+        train_loss, train_out, train_targets = train_fn_dpsgd(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
