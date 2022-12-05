@@ -271,7 +271,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     print_history(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
-def run_fair(fold, male_df, female_df, test_df, args, device, current_time):
+def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     model_name =  '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                                  args.mode, fold,
                                                                                                  args.ns,
