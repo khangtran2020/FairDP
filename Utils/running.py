@@ -929,6 +929,7 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         'disp_imp': [],
         'test_history_loss': [],
         'test_history_acc': [],
+        'epsilon': [],
         'best_test': 0,
         'best_demo_parity': 0,
         'best_equal_odd': 0,
