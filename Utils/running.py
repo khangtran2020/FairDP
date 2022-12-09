@@ -360,18 +360,16 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         train_male_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
 
     train_female_loader = DataLoader(
         train_female_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
 
     valid_male_loader = DataLoader(
