@@ -174,7 +174,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     )
 
     # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=False)
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
@@ -578,12 +578,14 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     )
 
     # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
-        num_workers=4
+        sampler=sampler,
+        num_workers=0
     )
 
     valid_loader = DataLoader(
@@ -604,22 +606,23 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         drop_last=False,
     )
 
+    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
     train_male_loader = DataLoader(
         train_male_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
+        sampler=male_sampler,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
-
+    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
     train_female_loader = DataLoader(
         train_female_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
+        sampler=female_sampler,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
 
     valid_male_loader = DataLoader(
@@ -829,12 +832,14 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     )
 
     # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         pin_memory=True,
         drop_last=True,
-        num_workers=4
+        sampler=sampler,
+        num_workers=0
     )
 
     valid_loader = DataLoader(
@@ -855,22 +860,23 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         drop_last=False,
     )
 
+    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
     train_male_loader = DataLoader(
         train_male_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
+        sampler=male_sampler,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
-
+    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
     train_female_loader = DataLoader(
         train_female_dataset,
         batch_size=args.batch_size,
         num_workers=4,
-        shuffle=False,
+        sampler=female_sampler,
         pin_memory=True,
-        drop_last=False,
+        drop_last=True,
     )
 
     valid_male_loader = DataLoader(
