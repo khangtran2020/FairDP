@@ -198,9 +198,9 @@ def train_fn_track_grad(dataloader, model, criterion, optimizer, device, schedul
                 temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
             # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
             if ismale[i].item() == 1:
-                male_norm.append(np.sqrt(total_l2_norm))
+                male_norm.append(np.sqrt(total_l2_norm.item()))
             else:
-                female_norm.append(np.sqrt(total_l2_norm))
+                female_norm.append(np.sqrt(total_l2_norm.item()))
             output = output.cpu().detach().numpy()
             train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
             train_outputs.append(output)
