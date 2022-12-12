@@ -5,7 +5,6 @@ from opacus.utils.batch_memory_manager import BatchMemoryManager
 from copy import deepcopy
 
 
-
 class EarlyStopping:
     def __init__(self, patience=7, mode="max", delta=0.001, verbose=False):
         self.patience = patience
@@ -49,6 +48,7 @@ class EarlyStopping:
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
 
+
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
     model.train()
@@ -58,7 +58,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     train_loss = 0
 
     for bi, d in enumerate(dataloader):
-        features, target = d
+        features, target, _ = d
 
         features = features.to(device, dtype=torch.float)
         target = target.to(device, dtype=torch.float)
@@ -83,6 +83,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
     return train_loss, train_outputs, train_targets
 
+
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []
@@ -92,7 +93,7 @@ def eval_fn(data_loader, model, criterion, device):
     model.eval()
     with torch.no_grad():
         for bi, d in enumerate(data_loader):
-            features, target = d
+            features, target, _ = d
 
             features = features.to(device, dtype=torch.float)
             target = target.to(device, dtype=torch.float)
@@ -109,6 +110,7 @@ def eval_fn(data_loader, model, criterion, device):
 
     return loss, fin_outputs, fin_targets
 
+
 def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
     model.train()
@@ -118,7 +120,60 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
     train_loss = 0
     num_data_point = 0
     for bi, d in enumerate(dataloader):
-        features, target = d
+        features, target, _ = d
+        features = features.to(device, dtype=torch.float)
+        target = target.to(device, dtype=torch.float)
+        optimizer.zero_grad()
+        temp_par = {}
+        for p in model.named_parameters():
+            temp_par[p[0]] = torch.zeros_like(p[1])
+        bz = features.size(dim=0)
+        for i in range(bz):
+            for p in model.named_parameters():
+                p[1].grad = torch.zeros_like(p[1])
+            feat = features[i]
+            targ = target[i]
+            output = model(feat)
+            output = torch.squeeze(output)
+            loss = criterion(output, targ)
+            train_loss += loss.item()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
+            # total_l2_norm = 0
+            for p in model.named_parameters():
+                # total_l2_norm += p[1].grad.detach().norm(p=2)**2
+                temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
+            # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
+            output = output.cpu().detach().numpy()
+            train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
+            train_outputs.append(output)
+            # model.zero_grad()
+            num_data_point += 1
+
+        for p in model.named_parameters():
+            p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(
+                device)
+            p[1].grad = p[1].grad / bz
+        optimizer.step()
+
+    if scheduler is not None:
+        scheduler.step()
+
+    return train_loss / num_data_point, train_outputs, train_targets
+
+
+def train_fn_track_grad(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
+    model.to(device)
+    model.train()
+    noise_std = get_gaussian_noise(clipping, noise_scale)
+    train_targets = []
+    train_outputs = []
+    male_norm = []
+    female_norm = []
+    train_loss = 0
+    num_data_point = 0
+    for bi, d in enumerate(dataloader):
+        features, target, ismale = d
         features = features.to(device, dtype=torch.float)
         target = target.to(device, dtype=torch.float)
         optimizer.zero_grad()
@@ -139,9 +194,13 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
             torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
             total_l2_norm = 0
             for p in model.named_parameters():
-                total_l2_norm += p[1].grad.detach().norm(p=2)**2
+                total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
                 temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
             # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
+            if ismale[i].item() == 1:
+                male_norm.append(np.sqrt(total_l2_norm))
+            else:
+                female_norm.append(np.sqrt(total_l2_norm))
             output = output.cpu().detach().numpy()
             train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
             train_outputs.append(output)
@@ -154,10 +213,14 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
             p[1].grad = p[1].grad / bz
         optimizer.step()
 
+    male_norm = np.array(male_norm)
+    female_norm = np.array(female_norm)
+
     if scheduler is not None:
         scheduler.step()
 
-    return train_loss / num_data_point, train_outputs, train_targets
+    return train_loss / num_data_point, train_outputs, train_targets, np.mean(male_norm), np.mean(female_norm), np.std(
+        male_norm), np.std(female_norm)
 
 # def train_opacus(dataloader, model, criterion, optimizer, device, args):
 #     model.to(device)

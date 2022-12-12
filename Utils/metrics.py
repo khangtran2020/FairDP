@@ -11,7 +11,7 @@ def demo_parity(male_loader, female_loader, model, device):
     with torch.no_grad():
 
         for bi, d in enumerate(male_loader):
-            features, _ = d
+            features, _, _ = d
             features = features.to(device, dtype=torch.float)
             outputs = model(features)
             outputs = torch.squeeze(outputs, dim=-1)
@@ -19,7 +19,7 @@ def demo_parity(male_loader, female_loader, model, device):
             male_outputs.extend(outputs)
 
         for bi, d in enumerate(female_loader):
-            features, _ = d
+            features, _, _ = d
             features = features.to(device, dtype=torch.float)
             outputs = model(features)
             # if outputs.size(dim=0) > 1:
@@ -44,7 +44,7 @@ def equality_of_odd(male_loader, female_loader, model, device):
     with torch.no_grad():
 
         for bi, d in enumerate(male_loader):
-            features, target = d
+            features, target, _ = d
 
             features = features.to(device, dtype=torch.float)
             target = target.to(device, dtype=torch.float)
@@ -57,7 +57,7 @@ def equality_of_odd(male_loader, female_loader, model, device):
             male_target.extend(target.cpu().detach().numpy().astype(int).tolist())
 
         for bi, d in enumerate(female_loader):
-            features, target = d
+            features, target, _ = d
 
             features = features.to(device, dtype=torch.float)
             target = target.to(device, dtype=torch.float)
@@ -93,7 +93,7 @@ def disperate_impact(male_loader, female_loader, global_model, male_model, femal
     with torch.no_grad():
 
         for bi, d in enumerate(male_loader):
-            features, _ = d
+            features, _, _ = d
 
             features = features.to(device, dtype=torch.float)
 
@@ -109,7 +109,7 @@ def disperate_impact(male_loader, female_loader, global_model, male_model, femal
             male_outputs.extend(male_out)
 
         for bi, d in enumerate(female_loader):
-            features, _ = d
+            features, _, _ = d
 
             features = features.to(device, dtype=torch.float)
 

@@ -1,5 +1,5 @@
 import torch
-from Data.datasets import Adult
+from Data.datasets import Data
 from torch.utils.data import DataLoader
 from Model.models import NeuralNetwork, NormNN
 from Utils.train_eval import *
@@ -32,19 +32,22 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
     df_valid = train_df[train_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Adult(
-        df_train[args.feature].values,
-        df_train[args.target].values
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
     )
 
-    valid_dataset = Adult(
-        df_valid[args.feature].values,
-        df_valid[args.target].values
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
     )
 
-    test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
+    test_dataset = Data(
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -158,19 +161,22 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     df_valid = train_df[train_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Adult(
-        df_train[args.feature].values,
-        df_train[args.target].values
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
     )
 
-    valid_dataset = Adult(
-        df_valid[args.feature].values,
-        df_valid[args.target].values
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
     )
 
     test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -294,39 +300,46 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     df_val_fem = female_df[female_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Adult(
-        df_train[args.feature].values,
-        df_train[args.target].values
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
     )
 
-    test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
+    test_dataset = Data(
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
     )
 
-    valid_dataset = Adult(
-        df_valid[args.feature].values,
-        df_valid[args.target].values
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
     )
 
-    train_male_dataset = Adult(
-        df_train_mal[args.feature].values,
-        df_train_mal[args.target].values
+    train_male_dataset = Data(
+        X=df_train_mal[args.feature].values,
+        y=df_train_mal[args.target].values,
+        ismale=df_train_mal[args.z].values
     )
 
-    train_female_dataset = Adult(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values
+    train_female_dataset = Data(
+        X=df_train_fem[args.feature].values,
+        y=df_train_fem[args.target].values,
+        ismale=df_train_fem[args.z].values
     )
 
-    valid_male_dataset = Adult(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values
+    valid_male_dataset = Data(
+        X=df_val_mal[args.feature].values,
+        y=df_val_mal[args.target].values,
+        ismale=df_val_mal[args.z].values
     )
 
-    valid_female_dataset = Adult(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values
+    valid_female_dataset = Data(
+        X=df_val_fem[args.feature].values,
+        y=df_val_fem[args.target].values,
+        ismale=df_val_fem[args.z].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -540,39 +553,46 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     df_val_fem = female_df[female_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Adult(
-        df_train[args.feature].values,
-        df_train[args.target].values
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
     )
 
-    test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
+    test_dataset = Data(
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
     )
 
-    valid_dataset = Adult(
-        df_valid[args.feature].values,
-        df_valid[args.target].values
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
     )
 
-    train_male_dataset = Adult(
-        df_train_mal[args.feature].values,
-        df_train_mal[args.target].values
+    train_male_dataset = Data(
+        X=df_train_mal[args.feature].values,
+        y=df_train_mal[args.target].values,
+        ismale=df_train_mal[args.z].values
     )
 
-    train_female_dataset = Adult(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values
+    train_female_dataset = Data(
+        X=df_train_fem[args.feature].values,
+        y=df_train_fem[args.target].values,
+        ismale=df_train_fem[args.z].values
     )
 
-    valid_male_dataset = Adult(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values
+    valid_male_dataset = Data(
+        X=df_val_mal[args.feature].values,
+        y=df_val_mal[args.target].values,
+        ismale=df_val_mal[args.z].values
     )
 
-    valid_female_dataset = Adult(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values
+    valid_female_dataset = Data(
+        X=df_val_fem[args.feature].values,
+        y=df_val_fem[args.target].values,
+        ismale=df_val_fem[args.z].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -794,39 +814,46 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     df_val_fem = female_df[female_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Adult(
-        df_train[args.feature].values,
-        df_train[args.target].values
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
     )
 
-    test_dataset = Adult(
-        test_df[args.feature].values,
-        test_df[args.target].values
+    test_dataset = Data(
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
     )
 
-    valid_dataset = Adult(
-        df_valid[args.feature].values,
-        df_valid[args.target].values
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
     )
 
-    train_male_dataset = Adult(
-        df_train_mal[args.feature].values,
-        df_train_mal[args.target].values
+    train_male_dataset = Data(
+        X=df_train_mal[args.feature].values,
+        y=df_train_mal[args.target].values,
+        ismale=df_train_mal[args.z].values
     )
 
-    train_female_dataset = Adult(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values
+    train_female_dataset = Data(
+        X=df_train_fem[args.feature].values,
+        y=df_train_fem[args.target].values,
+        ismale=df_train_fem[args.z].values
     )
 
-    valid_male_dataset = Adult(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values
+    valid_male_dataset = Data(
+        X=df_val_mal[args.feature].values,
+        y=df_val_mal[args.target].values,
+        ismale=df_val_mal[args.z].values
     )
 
-    valid_female_dataset = Adult(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values
+    valid_female_dataset = Data(
+        X=df_val_fem[args.feature].values,
+        y=df_val_fem[args.target].values,
+        ismale=df_val_fem[args.z].values
     )
 
     # Defining DataLoader with BalanceClass Sampler
@@ -1029,6 +1056,280 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
     history['best_equal_odd'] = equal_odd
     history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair_dp(fold, history, epoch + 1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+
+def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args, device, current_time):
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
+
+    df_train = train_df[train_df.fold != fold]
+    df_valid = train_df[train_df.fold == fold]
+
+    df_train_mal = male_df[male_df.fold != fold]
+    df_train_fem = female_df[female_df.fold != fold]
+
+    df_val_mal = male_df[male_df.fold == fold]
+    df_val_fem = female_df[female_df.fold == fold]
+
+    # Defining DataSet
+    train_dataset = Data(
+        X=df_train[args.feature].values,
+        y=df_train[args.target].values,
+        ismale=df_train[args.z].values
+    )
+
+    test_dataset = Data(
+        X=test_df[args.feature].values,
+        y=test_df[args.target].values,
+        ismale=test_df[args.z].values
+    )
+
+    valid_dataset = Data(
+        X=df_valid[args.feature].values,
+        y=df_valid[args.target].values,
+        ismale=df_valid[args.z].values
+    )
+
+    train_male_dataset = Data(
+        X=df_train_mal[args.feature].values,
+        y=df_train_mal[args.target].values,
+        ismale=df_train_mal[args.z].values
+    )
+
+    train_female_dataset = Data(
+        X=df_train_fem[args.feature].values,
+        y=df_train_fem[args.target].values,
+        ismale=df_train_fem[args.z].values
+    )
+
+    valid_male_dataset = Data(
+        X=df_val_mal[args.feature].values,
+        y=df_val_mal[args.target].values,
+        ismale=df_val_mal[args.z].values
+    )
+
+    valid_female_dataset = Data(
+        X=df_val_fem[args.feature].values,
+        y=df_val_fem[args.target].values,
+        ismale=df_val_fem[args.z].values
+    )
+
+    # Defining DataLoader with BalanceClass Sampler
+    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        drop_last=True,
+        sampler=sampler,
+        num_workers=0
+    )
+
+    valid_loader = DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
+    train_male_loader = DataLoader(
+        train_male_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        sampler=male_sampler,
+        pin_memory=True,
+        drop_last=True,
+    )
+    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
+    train_female_loader = DataLoader(
+        train_female_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        sampler=female_sampler,
+        pin_memory=True,
+        drop_last=True,
+    )
+
+    valid_male_loader = DataLoader(
+        valid_male_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    valid_female_loader = DataLoader(
+        valid_female_dataset,
+        batch_size=args.batch_size,
+        num_workers=4,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    # Defining Model for specific fold
+    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model.to(device)
+    model_male.to(device)
+    model_female.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
+
+    # Defining LR SCheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+                                                           factor=0.1, patience=10, verbose=True,
+                                                           threshold=0.0001, threshold_mode='rel',
+                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
+    scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+                                                                factor=0.1, patience=10, verbose=True,
+                                                                threshold=0.0001, threshold_mode='rel',
+                                                                cooldown=0, min_lr=1e-4, eps=1e-08)
+    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+                                                                  factor=0.1, patience=10, verbose=True,
+                                                                  threshold=0.0001, threshold_mode='rel',
+                                                                  cooldown=0, min_lr=1e-4, eps=1e-08)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'demo_parity': [],
+        'equal_odd': [],
+        'disp_imp': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'best_test': 0,
+        'best_demo_parity': 0,
+        'best_equal_odd': 0,
+        'best_disp_imp': 0,
+        'male_norm': [],
+        'female_norm': [],
+        'male_std': [],
+        'female_std': []
+    }
+
+    # THE ENGINE LOOP
+    i = 0
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
+        _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
+                                 scheduler=None, clipping=args.clip,
+                                 noise_scale=args.ns)
+        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(train_loader,
+                                                                                                           model,
+                                                                                                           criterion,
+                                                                                                           optimizer,
+                                                                                                           device,
+                                                                                                           scheduler=None,
+                                                                                                           clipping=args.clip,
+                                                                                                           noise_scale=args.ns)
+        val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
+        _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
+        _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
+        test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                                   model=model, device=device)
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                          female_loader=valid_female_loader, model=model, device=device)
+        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                                  female_loader=valid_female_loader,
+                                                  global_model=model,
+                                                  male_model=model_male,
+                                                  female_model=model_female,
+                                                  num_male=len(df_val_mal),
+                                                  num_female=len(df_val_fem),
+                                                  device=device)
+        train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
+        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+
+        male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
+        female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
+
+        scheduler.step(acc_score)
+        scheduler_male.step(male_acc_score)
+        scheduler_female.step(female_acc_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
+                        Valid_ACC_SCORE=acc_score)
+
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(val_loss)
+        history['val_history_acc'].append(acc_score)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['demo_parity'].append(demo_p)
+        history['disp_imp'].append(max(male_norm, female_norm))
+        history['equal_odd'].append(equal_odd)
+        history['male_norm'].append(male_n)
+        history['female_norm'].append(female_n)
+        history['male_std'].append(male_std)
+        history['female_std'].append(female_std)
+
+        es(acc_score, model, args.save_path + model_name)
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
+    model.load_state_dict(torch.load(args.save_path + model_name))
+    test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+    test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                               model=model, device=device)
+    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                      female_loader=valid_female_loader, model=model, device=device)
+    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                              female_loader=valid_female_loader,
+                                              global_model=model,
+                                              male_model=model_male,
+                                              female_model=model_female,
+                                              num_male=len(df_val_mal),
+                                              num_female=len(df_val_fem),
+                                              device=device)
+    history['best_test'] = test_acc
+    history['best_demo_parity'] = demo_p
+    history['best_equal_odd'] = equal_odd
+    history['best_disp_imp'] = max(male_norm, female_norm)
+    print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):

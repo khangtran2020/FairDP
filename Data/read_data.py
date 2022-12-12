@@ -76,10 +76,11 @@ def read_adult(args):
     feature_cols.remove('income')
     feature_cols.remove('sex')
     label = 'income'
+    z = 'sex'
     fold_separation(train_df, args.folds, feature_cols, label)
     male_df = train_df[train_df['sex'] == 1].copy()
     female_df = train_df[train_df['sex'] == 0].copy()
-    return train_df, test_df, male_df, female_df, feature_cols, label
+    return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def read_bank(args):
     # 3305
@@ -95,10 +96,11 @@ def read_bank(args):
     feature_cols.remove('is_train')
     feature_cols.remove('intercept')
     label = 'y'
+    z = 'z'
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
-    fold_separation(train_df, args.folds, feature_cols, label)
-    return train_df, test_df, male_df, female_df, feature_cols, label
+    train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
+    return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def read_stroke(args):
     # 1436
@@ -112,10 +114,11 @@ def read_stroke(args):
     feature_cols.remove('z')
     feature_cols.remove('is_train')
     label = 'y'
+    z = 'z'
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
     fold_separation(train_df, args.folds, feature_cols, label)
-    return train_df, test_df, male_df, female_df, feature_cols, label
+    return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def fold_separation(train_df, folds, feat_cols, label):
     skf = StratifiedKFold(n_splits=folds)

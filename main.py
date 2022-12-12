@@ -17,23 +17,26 @@ def run(args, current_time, device):
     print('Using noise scale: {}, clip: {}'.format(args.ns, args.clip))
 
     if args.dataset == 'adult':
-        train_df, test_df, male_df, female_df, feature_cols, label = read_adult(args)
+        train_df, test_df, male_df, female_df, feature_cols, label, z = read_adult(args)
         args.feature = feature_cols
         args.target = label
+        args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
         print(feature_cols)
     elif args.dataset == 'bank':
-        train_df, test_df, male_df, female_df, feature_cols, label = read_bank(args)
+        train_df, test_df, male_df, female_df, feature_cols, label, z = read_bank(args)
         args.feature = feature_cols
         args.target = label
+        args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
         print(feature_cols)
     elif args.dataset == 'stroke':
-        train_df, test_df, male_df, female_df, feature_cols, label = read_stroke(args)
+        train_df, test_df, male_df, female_df, feature_cols, label, z = read_stroke(args)
         args.feature = feature_cols
         args.target = label
+        args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
         print(feature_cols)
@@ -95,6 +98,17 @@ def run(args, current_time, device):
         accountant.history = [(args.ns, sampler_rate, steps)]
         eps = accountant.get_epsilon(delta=args.tar_delt)
         print("Epsilon used: {}".format(eps))
+    elif args.mode == 'fairdp_track':
+        # fold, train_df, test_df, male_df, female_df, args, device, current_time)
+        if args.debug:
+            run_fair_dpsgd_track_grad(fold=0, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df, args=args,
+                           device=device,
+                           current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd_track_grad(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, train_df=train_df,
+                               args=args, device=device,
+                               current_time=current_time)
     # elif args.mode == 'testdp':
     #     if args.debug:
     #         run_fair_dpsgd_test(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
