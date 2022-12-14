@@ -648,7 +648,7 @@ def print_history_proposed(fold, history, num_epochs, args, current_time):
                                                                                                   current_time.hour,
                                                                                                   current_time.minute,
                                                                                                   current_time.second)
-    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+    fig, axs = plt.subplots(1, 3, figsize=(22, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
