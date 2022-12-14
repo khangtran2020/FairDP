@@ -90,6 +90,7 @@ def run(args, current_time, device):
                                      sample_rate=args.batch_size / len(train_df), epochs=args.epochs,
                                      accountant='rdp')
         print("Noise scale to use: {}".format(sigma))
+
     elif args.mode == 'geteps':
         print(len(train_df))
         accountant = create_accountant(mechanism='rdp')
@@ -120,15 +121,15 @@ def run(args, current_time, device):
                 run_functional_mechanism_logistic_regression(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, train_df=train_df,
                                args=args, device=device,
                                current_time=current_time)
-    # elif args.mode == 'testdp':
-    #     if args.debug:
-    #         run_fair_dpsgd_test(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
-    #                             current_time=current_time)
-    #     else:
-    #         for fold in range(args.folds):
-    #             run_fair_dpsgd_test(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args,
-    #                                 device=device,
-    #                                 current_time=current_time)
+    elif args.mode == 'proposed':
+        if args.debug:
+            run_fair_dpsgd_alg2(fold=0, male_df=male_df, female_df=female_df, test_df=test_df, args=args, device=device,
+                                current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd_alg2(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, args=args,
+                                    device=device,
+                                    current_time=current_time)
 
 
 if __name__ == "__main__":

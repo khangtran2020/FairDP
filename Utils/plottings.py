@@ -635,6 +635,113 @@ def print_history_func(fold, history, num_epochs, args, current_time):
     plt.savefig(save_name)
 
 
+def print_history_proposed(fold, history, num_epochs, args, current_time):
+    # plt.figure(figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['train_history_acc'],
+        '-o',
+        label='Train ACC'
+    )
+
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['val_history_acc'],
+        '--o',
+        label='Val ACC'
+    )
+
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['test_history_acc'],
+        '-.^',
+        label='Test ACC',
+    )
+
+    # axs[0].plot(
+    #     np.arange(num_epochs),
+    #     history['test_history_acc'],
+    #     ':*',
+    #     label='Test ACC',
+    #     color='deeppink'
+    # )
+
+    axs[0].set_ylabel('ACC', size=14)
+    axs[0].set_xlabel('Epoch', size=14)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
+    axs[0].legend()
+
+    # plt2 = plt.gca().twinx()
+
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['train_history_loss'],
+        '-o',
+        label='Train Loss',
+        color='#2ca02c'
+    )
+
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['val_history_loss'],
+        '--o',
+        label='Val Loss'
+    )
+
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['test_history_loss'],
+        '-.^',
+        label='Test Loss',
+    )
+
+    axs[1].set_ylabel('Loss', size=14)
+    axs[1].set_xlabel('Epochs', size=14)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
+
+    axs[1].legend()
+
+    axs[2].plot(
+        np.arange(num_epochs),
+        history['male_norm'],
+        '-.o',
+        label='Male'
+    )
+
+    axs[2].plot(
+        np.arange(num_epochs),
+        history['female_norm'],
+        '--*',
+        label='Female'
+    )
+
+    bnd = bound(args=args)
+    axs[2].plot(
+        np.arange(num_epochs),
+        np.ones(num_epochs)*bnd,
+        '-^',
+        label='Theoretical Bound'
+    )
+
+    axs[2].set_ylabel(r'$L_1$-norm', size=14)
+    axs[2].set_xlabel('Epochs', size=14)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
+    plt.savefig(save_name)
+
+
 # def print_history_fair_(fold, history, num_epochs, args, current_time):
 #     # plt.figure(figsize=(15,5))
 #     save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
