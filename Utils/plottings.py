@@ -506,6 +506,135 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
     axs[3].legend()
     plt.savefig(save_name)
 
+def print_history_func(fold, history, num_epochs, args, current_time):
+    # plt.figure(figsize=(15,5))
+    save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,
+                                                                                                  args.mode, fold,
+                                                                                                  args.ns,
+                                                                                                  args.clip,
+                                                                                                  args.epochs,
+                                                                                                  current_time.day,
+                                                                                                  current_time.month,
+                                                                                                  current_time.year,
+                                                                                                  current_time.hour,
+                                                                                                  current_time.minute,
+                                                                                                  current_time.second)
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['train_history_acc'],
+        '-o',
+        label='Train ACC',
+        color='#ff7f0e'
+    )
+
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['test_history_acc'],
+        '--o',
+        label='Test ACC',
+        color='#1f77b4'
+    )
+
+    # axs[0].plot(
+    #     np.arange(num_epochs),
+    #     history['test_history_acc'],
+    #     ':*',
+    #     label='Test ACC',
+    #     color='deeppink'
+    # )
+
+    # x = np.argmax(history['val_history_acc'])
+    # y = np.max(history['val_history_acc'])
+
+    # xdist = axs[0].get_xlim()[1] - axs[0].get_xlim()[0]
+    # ydist = axs[0].get_ylim()[1] - axs[0].get_ylim()[0]
+
+    # axs[0].scatter(x, y, s=200, color='#1f77b4')
+    #
+    # axs[0].text(
+    #     x - 0.03 * xdist,
+    #     y - 0.13 * ydist,
+    #     'max acc\n%.2f' % y,
+    #     size=14
+    # )
+
+    axs[0].set_ylabel('ACC', size=14)
+    axs[0].set_xlabel('Epoch', size=14)
+    axs[0].set_title(f'FOLD {fold + 1}', size=18)
+    axs[0].legend()
+
+    # plt2 = plt.gca().twinx()
+
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['train_history_loss'],
+        '-o',
+        label='Train Loss',
+        color='#2ca02c'
+    )
+
+    # axs[1].plot(
+    #     np.arange(num_epochs),
+    #     history['val_history_loss'],
+    #     '--o',
+    #     label='Test Loss',
+    #     color='deeppink'
+    # )
+
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['test_history_loss'],
+        ':*',
+        label='Val Loss',
+        color='#d62728'
+    )
+
+    # x = np.argmin(history['val_history_loss'])
+    # y = np.min(history['val_history_loss'])
+    #
+    # xdist = axs[1].get_xlim()[1] - axs[1].get_xlim()[0]
+    # ydist = axs[1].get_ylim()[1] - axs[1].get_ylim()[0]
+
+    # axs[1].scatter(x, y, s=200, color='#d62728')
+    #
+    # axs[1].text(
+    #     x - 0.03 * xdist,
+    #     y + 0.05 * ydist,
+    #     'min loss',
+    #     size=14
+    # )
+
+    axs[1].set_ylabel('Loss', size=14)
+    axs[1].set_xlabel('Epochs', size=14)
+    axs[1].set_title(f'FOLD {fold + 1}', size=18)
+
+    axs[1].legend()
+
+    axs[2].plot(
+        np.arange(num_epochs),
+        history['demo_parity'],
+        '-o',
+        label='Demographic Parity',
+        color='blue'
+    )
+    axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
+    axs[2].set_xlabel('Epochs', size=14)
+    axs[2].set_title(f'FOLD {fold + 1}', size=18)
+
+    ax2 = axs[2].twinx()
+    ax2.plot(
+        np.arange(num_epochs),
+        history['equal_odd'],
+        '--*',
+        label='Equality of Odds',
+        color='red'
+    )
+    ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
+    plt.savefig(save_name)
+
+
 # def print_history_fair_(fold, history, num_epochs, args, current_time):
 #     # plt.figure(figsize=(15,5))
 #     save_name = args.plot_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.jpg'.format(args.dataset,

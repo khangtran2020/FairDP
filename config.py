@@ -20,7 +20,7 @@ def add_model_group(group):
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')
     group.add_argument('--batch_size', type=int, default=512, help="batch size for training process")
     group.add_argument('--n_hid', type=int, default=64, help='number hidden embedding dim')
-    group.add_argument("--drop_out", type=float, default=0.2)
+    group.add_argument("--alpha", type=float, default=0.2)
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
     group.add_argument("--optimizer", type=str, default='adamw')
     group.add_argument("--epochs", type=int, default=100, help='training step')

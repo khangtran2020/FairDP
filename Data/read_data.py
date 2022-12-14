@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import MinMaxScaler
 
 def read_adult(args):
     header = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'income']
@@ -85,11 +86,7 @@ def read_adult(args):
 def read_bank(args):
     # 3305
     df = pd.read_csv('Data/Bank/formated_bank.csv')
-    train_df = df[df['is_train'] == 1].reset_index(drop=True)
-    test_df = df[df['is_train'] == 0].reset_index(drop=True)
-    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
-    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
-    feature_cols = list(train_df.columns)
+    feature_cols = list(df.columns)
     feature_cols.remove('y')
     feature_cols.remove('z')
     feature_cols.remove('label')
@@ -97,6 +94,11 @@ def read_bank(args):
     feature_cols.remove('intercept')
     label = 'y'
     z = 'z'
+    train_df = df[df['is_train'] == 1].reset_index(drop=True)
+    test_df = df[df['is_train'] == 0].reset_index(drop=True)
+    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
+
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
     train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)

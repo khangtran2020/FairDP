@@ -46,3 +46,18 @@ def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
+
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
+
+def logloss(y, pred):
+    return -1*y*np.log2(pred + 1e-6) - (1 - y)*np.log2(1 - pred + 1e-6)
+
+def get_coefficient(X, y, mode='torch'):
+    num_data_point = X.shape[0]
+    coff_0 = 1.0
+    coff_1 = np.sum(X/2 - X*y, axis = 0).astype(np.float32)
+    coff_2 = np.dot(X.T, X).astype(np.float32)
+    if mode == 'scipy':
+        return coff_0, (1/num_data_point)*coff_1.reshape(-1, 1), (1/num_data_point)*coff_2
+    return coff_0, (1/num_data_point)*torch.from_numpy(coff_1.reshape(1, -1)), (1/num_data_point)*torch.from_numpy(coff_2)
