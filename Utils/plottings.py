@@ -381,7 +381,7 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
                                                                                                   current_time.hour,
                                                                                                   current_time.minute,
                                                                                                   current_time.second)
-    fig, axs = plt.subplots(1, 4, figsize=(25, 5))
+    fig, axs = plt.subplots(1, 3, figsize=(25, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -474,36 +474,36 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
 
     axs[1].legend()
 
-    axs[2].plot(
-        np.arange(num_epochs),
-        history['demo_parity'],
-        '-o',
-        label='Demographic Parity',
-        color='blue'
-    )
-    axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
-    axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}', size=18)
+    # axs[2].plot(
+    #     np.arange(num_epochs),
+    #     history['demo_parity'],
+    #     '-o',
+    #     label='Demographic Parity',
+    #     color='blue'
+    # )
+    # axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
+    # axs[2].set_xlabel('Epochs', size=14)
+    # axs[2].set_title(f'FOLD {fold + 1}', size=18)
+    #
+    # ax2 = axs[2].twinx()
+    # ax2.plot(
+    #     np.arange(num_epochs),
+    #     history['equal_odd'],
+    #     '--*',
+    #     label='Equality of Odds',
+    #     color='red'
+    # )
+    # ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
 
-    ax2 = axs[2].twinx()
-    ax2.plot(
-        np.arange(num_epochs),
-        history['equal_odd'],
-        '--*',
-        label='Equality of Odds',
-        color='red'
-    )
-    ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
-
-    axs[3].plot(np.arange(num_epochs), history['male_norm'], label='male')
-    axs[3].plot(np.arange(num_epochs), history['female_norm'], label='female')
-    axs[3].fill_between(np.arange(num_epochs), np.array(history['male_norm']) - np.array(history['male_std']),
+    axs[2].plot(np.arange(num_epochs), history['male_norm'], '-*', label='male')
+    axs[2].plot(np.arange(num_epochs), history['female_norm'],'-o', label='female')
+    axs[2].fill_between(np.arange(num_epochs), np.array(history['male_norm']) - np.array(history['male_std']),
                         np.array(history['male_norm']) + np.array(history['male_std']), alpha=0.2)
-    axs[3].fill_between(np.arange(num_epochs), np.array(history['female_norm']) - np.array(history['female_std']),
+    axs[2].fill_between(np.arange(num_epochs), np.array(history['female_norm']) - np.array(history['female_std']),
                         np.array(history['female_norm']) + np.array(history['female_std']), alpha=0.2)
-    axs[3].set_xlabel('Epochs', size=14)
-    axs[3].set_ylabel('Norm of Gradient', size=14)
-    axs[3].legend()
+    axs[2].set_xlabel('Epochs', size=14)
+    axs[2].set_ylabel('Norm of Gradient', size=14)
+    axs[2].legend()
     plt.savefig(save_name)
 
 def print_history_func(fold, history, num_epochs, args, current_time):
