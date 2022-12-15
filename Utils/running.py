@@ -1609,173 +1609,6 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 
-
-def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_df, female_df, args, device,
-                                                 current_time):
-    # read data
-    # print(male_df.head())
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # initialize model for each group
-    # male_model = np.random.normal(loc=0.0, scale=1.0, size=(1, len(args.feature)))
-    # female_model = np.random.normal(loc=0.0, scale=1.0, size=(1, len(args.feature)))
-
-    male_model = torch.randn((1, len(args.feature)), device=device, requires_grad=True)
-    female_model = torch.randn((1, len(args.feature)), device=device, requires_grad=True)
-
-    # calculating coefficient
-    ## for male
-
-    x_train_mal = df_train_mal[args.feature].values
-    y_train_mal = df_train_mal[args.target].values.reshape(-1, 1)
-    x_train_mal = x_train_mal / np.linalg.norm(x_train_mal, ord=2, axis=1).reshape(-1, 1)
-
-    # print(x_train_mal)
-
-    male_coff_0, male_coff_1, male_coff_2 = get_coefficient(X=x_train_mal, y=y_train_mal)
-    #
-    # print(male_coff_2.size())
-    # print(male_coff_2)
-    # return
-
-    ## for female
-
-    x_train_fem = df_train_fem[args.feature].values.astype(np.float32)
-    y_train_fem = df_train_fem[args.target].values.reshape(-1, 1)
-    x_train_fem = x_train_fem / np.linalg.norm(x_train_fem, ord=2, axis=1).reshape(-1, 1)
-
-    female_coff_0, female_coff_1, female_coff_2 = get_coefficient(X=x_train_fem, y=y_train_fem)
-
-    # male_coff_0 = male_coff_0.to(device)
-    male_coff_1 = male_coff_1.to(device)
-    male_coff_2 = male_coff_2.to(device)
-
-    # female_coff_0 = female_coff_0.to(device)
-    female_coff_1 = female_coff_1.to(device)
-    female_coff_2 = female_coff_2.to(device)
-
-    x_train = df_train[args.feature].values
-    x_valid = df_valid[args.feature].values
-    x_test = test_df[args.feature].values
-
-    y_train = df_train[args.target].values.reshape(-1, 1)
-    y_valid = df_valid[args.target].values.reshape(-1, 1)
-    y_test = test_df[args.target].values.reshape(-1, 1)
-
-    x_val_mal = df_val_mal[args.feature].values.astype(np.float32)
-    x_val_fem = df_val_fem[args.feature].values.astype(np.float32)
-
-    y_val_mal = df_val_mal[args.target].values.astype(np.float32)
-    y_val_fem = df_val_fem[args.target].values.astype(np.float32)
-
-    # x_train = torch.from_numpy(x_train).to(device)
-    # x_valid = torch.from_numpy(x_valid).to(device)
-    # x_test = torch.from_numpy(x_test).to(device)
-    #
-    # y_train = torch.from_numpy(y_train).to(device)
-    # y_valid = torch.from_numpy(y_valid).to(device)
-    # y_test = torch.from_numpy(y_test).to(device)
-
-    # DEfining Early Stopping Object
-    # es = EarlyStopping(patience=args.patience, verbose=False)
-
-    # History dictionary to store everything
-    history = {
-        'train_history_loss': [],
-        'train_history_acc': [],
-        'val_history_loss': [],
-        'val_history_acc': [],
-        'demo_parity': [],
-        'equal_odd': [],
-        'disp_imp': [],
-        'test_history_loss': [],
-        'test_history_acc': [],
-        'best_test': 0,
-        'best_demo_parity': 0,
-        'best_equal_odd': 0,
-        'best_disp_imp': 0,
-    }
-
-    # training process
-    i = 0
-
-    # print(torch.inner(male_model.T, male_model.T))
-
-    tk0 = tqdm(range(args.epochs), total=args.epochs)
-    for epoch in tk0:
-        loss_male = male_coff_0 + torch.inner(male_coff_1, male_model) + torch.sum(
-            torch.mul(male_coff_2, torch.inner(male_model.T, male_model.T))) + args.alpha * torch.norm(
-            male_model - female_model, p=2)
-        male_model.retain_grad()
-        loss_male.backward()
-        loss_female = female_coff_0 + torch.inner(female_coff_1, female_model) + torch.sum(
-            torch.mul(female_coff_2, torch.inner(female_model.T, female_model.T))) + args.alpha * torch.norm(
-            female_model - male_model, p=2)
-        female_model.retain_grad()
-        loss_female.backward()
-        # print(loss_male.item(), loss_female.item())
-        with torch.no_grad():
-            male_model -= args.lr * male_model.grad
-            female_model -= args.lr * female_model.grad
-            global_model = (female_model + male_model) / 2
-            #
-            # print(global_model.size())
-
-            train_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_train.astype(np.float32)), global_model))
-            valid_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_valid.astype(np.float32)), global_model))
-            test_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_test.astype(np.float32)), global_model))
-
-            # print(train_pred.max(), train_pred.min())
-
-            valid_male = torch.sigmoid(torch.inner(torch.from_numpy(x_val_mal.astype(np.float32)), global_model))
-            valid_female = torch.sigmoid(torch.inner(torch.from_numpy(x_val_fem.astype(np.float32)), global_model))
-
-            tn, fp, fn, tp = confusion_matrix(y_val_mal, np.round(valid_male.numpy())).ravel()
-            male_tpr = tp / (tp + fn)
-            tn, fp, fn, tp = confusion_matrix(y_val_fem, np.round(valid_female.numpy())).ravel()
-            female_tpr = tp / (tp + fn)
-
-            prob_male = np.sum(np.round(valid_male.numpy())) / valid_male.shape[0]
-            prob_female = np.sum(np.round(valid_female.numpy())) / valid_female.shape[0]
-
-            train_loss = np.mean(logloss(y=y_train, pred=train_pred.numpy()))
-            valid_loss = np.mean(logloss(y=y_valid, pred=valid_pred.numpy()))
-            test_loss = np.mean(logloss(y=y_test, pred=test_pred.numpy()))
-
-            train_acc = accuracy_score(y_true=y_train, y_pred=np.round(train_pred.numpy()))
-            valid_acc = accuracy_score(y_true=y_valid, y_pred=np.round(valid_pred.numpy()))
-            test_acc = accuracy_score(y_true=y_test, y_pred=np.round(test_pred.numpy()))
-
-        male_model.grad = torch.zeros(male_model.size())
-        female_model.grad = torch.zeros(male_model.size())
-        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
-                        Valid_ACC_SCORE=valid_acc)
-        #
-        history['train_history_loss'].append(train_loss)
-        history['train_history_acc'].append(train_acc)
-        history['val_history_loss'].append(valid_loss)
-        history['val_history_acc'].append(valid_acc)
-        history['test_history_loss'].append(test_loss)
-        history['test_history_acc'].append(test_acc)
-        history['demo_parity'].append(np.abs(prob_male - prob_female))
-        history['equal_odd'].append(np.abs(male_tpr - female_tpr))
-        #
-        # es(acc_score, model, args.save_path + model_name)
-        #
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
-    print_history_func(fold, history, epoch + 1, args, current_time)
-    save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
-
 def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, current_time):
     model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
                                                                                  args.mode, fold,
@@ -2048,6 +1881,169 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
     history['best_test'] = test_acc
     history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_proposed(fold, history, epoch + 1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+
+
+
+def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_df, female_df, args, device,
+                                                 current_time):
+    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
+                                                                                 args.mode, fold,
+                                                                                 args.ns,
+                                                                                 args.clip,
+                                                                                 args.epochs,
+                                                                                 current_time.day,
+                                                                                 current_time.month,
+                                                                                 current_time.year,
+                                                                                 current_time.hour,
+                                                                                 current_time.minute,
+                                                                                 current_time.second)
+
+    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
+        drop=True)
+    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
+        drop=True)
+    df_train_mal = male_df[male_df.fold != fold]
+    df_train_fem = female_df[female_df.fold != fold]
+    df_val_mal = male_df[male_df.fold == fold]
+    df_val_fem = female_df[female_df.fold == fold]
+
+    # female
+    X_fem = df_train_fem[feature_cols].values
+    y_fem = df_train_fem[label].values.reshape(-1, 1)
+    X_fem = X_fem / np.linalg.norm(X_fem, ord=2, axis=1).reshape(-1, 1)
+
+    # male
+    X_mal = df_train_mal[feature_cols].values
+    y_mal = df_train_mal[label].values.reshape(-1, 1)
+    X_mal = X_mal / np.linalg.norm(X_mal, ord=2, axis=1).reshape(-1, 1)
+
+    # train
+    X = df_train[feature_cols].values
+    y = df_train[label].values.reshape(-1, 1)
+    X = X / np.linalg.norm(X, ord=2, axis=1).reshape(-1, 1)
+
+    f_coff_0, f_coff_1, f_coff_2, Q_f = get_coefficient(X=X_fem, y=y_fem, epsilon=eps, lbda=lbd, mode=mode)
+    m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=eps, lbda=lbd, mode=mode)
+
+    model_mal = torch.randn((1, m_coff_2.shape[1]), requires_grad=True)
+    model_fem = torch.randn((1, f_coff_2.shape[1]), requires_grad=True)
+
+
+
+    # x_train = df_train[args.feature].values
+    # x_valid = df_valid[args.feature].values
+    # x_test = test_df[args.feature].values
+    #
+    # y_train = df_train[args.target].values.reshape(-1, 1)
+    # y_valid = df_valid[args.target].values.reshape(-1, 1)
+    # y_test = test_df[args.target].values.reshape(-1, 1)
+    #
+    # x_val_mal = df_val_mal[args.feature].values.astype(np.float32)
+    # x_val_fem = df_val_fem[args.feature].values.astype(np.float32)
+    #
+    # y_val_mal = df_val_mal[args.target].values.astype(np.float32)
+    # y_val_fem = df_val_fem[args.target].values.astype(np.float32)
+
+    # x_train = torch.from_numpy(x_train).to(device)
+    # x_valid = torch.from_numpy(x_valid).to(device)
+    # x_test = torch.from_numpy(x_test).to(device)
+    #
+    # y_train = torch.from_numpy(y_train).to(device)
+    # y_valid = torch.from_numpy(y_valid).to(device)
+    # y_test = torch.from_numpy(y_test).to(device)
+
+    # DEfining Early Stopping Object
+    # es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'demo_parity': [],
+        'equal_odd': [],
+        'disp_imp': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'best_test': 0,
+        'best_demo_parity': 0,
+        'best_equal_odd': 0,
+        'best_disp_imp': 0,
+    }
+
+    # training process
+    i = 0
+
+    # print(torch.inner(male_model.T, male_model.T))
+
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        loss_male = male_coff_0 + torch.inner(male_coff_1, male_model) + torch.sum(
+            torch.mul(male_coff_2, torch.inner(male_model.T, male_model.T))) + args.alpha * torch.norm(
+            male_model - female_model, p=2)
+        male_model.retain_grad()
+        loss_male.backward()
+        loss_female = female_coff_0 + torch.inner(female_coff_1, female_model) + torch.sum(
+            torch.mul(female_coff_2, torch.inner(female_model.T, female_model.T))) + args.alpha * torch.norm(
+            female_model - male_model, p=2)
+        female_model.retain_grad()
+        loss_female.backward()
+        # print(loss_male.item(), loss_female.item())
+        with torch.no_grad():
+            male_model -= args.lr * male_model.grad
+            female_model -= args.lr * female_model.grad
+            global_model = (female_model + male_model) / 2
+            #
+            # print(global_model.size())
+
+            train_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_train.astype(np.float32)), global_model))
+            valid_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_valid.astype(np.float32)), global_model))
+            test_pred = torch.sigmoid(torch.inner(torch.from_numpy(x_test.astype(np.float32)), global_model))
+
+            # print(train_pred.max(), train_pred.min())
+
+            valid_male = torch.sigmoid(torch.inner(torch.from_numpy(x_val_mal.astype(np.float32)), global_model))
+            valid_female = torch.sigmoid(torch.inner(torch.from_numpy(x_val_fem.astype(np.float32)), global_model))
+
+            tn, fp, fn, tp = confusion_matrix(y_val_mal, np.round(valid_male.numpy())).ravel()
+            male_tpr = tp / (tp + fn)
+            tn, fp, fn, tp = confusion_matrix(y_val_fem, np.round(valid_female.numpy())).ravel()
+            female_tpr = tp / (tp + fn)
+
+            prob_male = np.sum(np.round(valid_male.numpy())) / valid_male.shape[0]
+            prob_female = np.sum(np.round(valid_female.numpy())) / valid_female.shape[0]
+
+            train_loss = np.mean(logloss(y=y_train, pred=train_pred.numpy()))
+            valid_loss = np.mean(logloss(y=y_valid, pred=valid_pred.numpy()))
+            test_loss = np.mean(logloss(y=y_test, pred=test_pred.numpy()))
+
+            train_acc = accuracy_score(y_true=y_train, y_pred=np.round(train_pred.numpy()))
+            valid_acc = accuracy_score(y_true=y_valid, y_pred=np.round(valid_pred.numpy()))
+            test_acc = accuracy_score(y_true=y_test, y_pred=np.round(test_pred.numpy()))
+
+        male_model.grad = torch.zeros(male_model.size())
+        female_model.grad = torch.zeros(male_model.size())
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
+                        Valid_ACC_SCORE=valid_acc)
+        #
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(valid_loss)
+        history['val_history_acc'].append(valid_acc)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['demo_parity'].append(np.abs(prob_male - prob_female))
+        history['equal_odd'].append(np.abs(male_tpr - female_tpr))
+        #
+        # es(acc_score, model, args.save_path + model_name)
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
+    print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):

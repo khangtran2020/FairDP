@@ -61,12 +61,31 @@ def logloss(y, pred):
     return -1 * y * np.log2(pred + 1e-6) - (1 - y) * np.log2(1 - pred + 1e-6)
 
 
-def get_coefficient(X, y, mode='torch'):
+def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     num_data_point = X.shape[0]
+    num_feat = X.shape[1]
+    sensitivity = num_feat**2/4 + 3*num_feat
     coff_0 = 1.0
-    coff_1 = np.sum(X / 2 - X * y, axis=0).astype(np.float32)
+    coff_1 = np.sum(X/2 - X*y, axis = 0).astype(np.float32)
     coff_2 = np.dot(X.T, X).astype(np.float32)
+    noise_1 = np.random.laplace(0.0, sensitivity/epsilon, coff_1.shape).astype(np.float32)
+    noise_2 = np.random.laplace(0.0, sensitivity/epsilon, coff_2.shape).astype(np.float32)
     if mode == 'scipy':
-        return coff_0, (1 / num_data_point) * coff_1.reshape(-1, 1), (1 / num_data_point) * coff_2
-    return coff_0, (1 / num_data_point) * torch.from_numpy(coff_1.reshape(1, -1)), (
-                1 / num_data_point) * torch.from_numpy(coff_2)
+        return coff_0, (1/num_data_point)*coff_1.reshape(-1, 1), (1/num_data_point)*coff_2
+    elif mode == 'scipy_dp':
+        coff_1 = coff_1.reshape(-1, 1)
+        coff_1 = coff_1 + noise_1
+        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T + lbda*np.identity(num_feat)
+        return coff_0, (1/num_data_point)*coff_1, (1/num_data_point)*coff_2
+    elif mode == 'torch':
+        return coff_0, (1/num_data_point)*torch.from_numpy(coff_1.reshape(1, -1)), (1/num_data_point)*torch.from_numpy(coff_2)
+    elif mode == 'func':
+        coff_1 = coff_1 + noise_1
+        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T + lbda*np.identity(num_feat)
+        w, V = np.linalg.eig(coff_2)
+        indx = np.where(w > 0)[0]
+        w = w[indx].astype(np.float32)
+        V = V[indx, :].astype(np.float32)
+        coff_2 = np.identity(len(w))*w.astype(np.float32)
+        coff_1 = np.dot(coff_1, V.T).astype(np.float32)
+        return coff_0, (1/num_data_point)*torch.from_numpy(coff_1.reshape(1, -1)), (1/num_data_point)*torch.from_numpy(coff_2), np.linalg.pinv(V)
