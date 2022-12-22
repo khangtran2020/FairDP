@@ -1800,22 +1800,22 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
 
         # dataloader, model, criterion, optimizer, device, scheduler, epoch, clipping, noise_scale
         _, _, _ = train_fn_dpsgd_one_batch(dataloader=train_male_loader,
-                                 model=model_male,
-                                 criterion=criterion,
-                                 optimizer=optimizer_male,
-                                 device=device,
-                                 scheduler=None,
-                                 clipping=args.clip,
-                                 noise_scale=args.ns)
+                                           model=model_male,
+                                           criterion=criterion,
+                                           optimizer=optimizer_male,
+                                           device=device,
+                                           scheduler=None,
+                                           clipping=args.clip,
+                                           noise_scale=args.ns)
 
         _, _, _ = train_fn_dpsgd_one_batch(dataloader=train_female_loader,
-                                 model=model_female,
-                                 criterion=criterion,
-                                 optimizer=optimizer_female,
-                                 device=device,
-                                 scheduler=None,
-                                 clipping=args.clip,
-                                 noise_scale=args.ns)
+                                           model=model_female,
+                                           criterion=criterion,
+                                           optimizer=optimizer_female,
+                                           device=device,
+                                           scheduler=None,
+                                           clipping=args.clip,
+                                           noise_scale=args.ns)
 
         # update global model
         male_dict = model_male.state_dict()
@@ -1932,8 +1932,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     X_fem_val = X_fem_val / np.linalg.norm(X_fem_val, ord=2, axis=1).reshape(-1, 1)
 
     X_valid = df_valid[args.feature].values
-    y_valid = df_valid[args.target].values.reshape(-1,1)
-    X_valid = X_valid / np.linalg.norm(X_valid, ord=2, axis=1).reshape(-1,1)
+    y_valid = df_valid[args.target].values.reshape(-1, 1)
+    X_valid = X_valid / np.linalg.norm(X_valid, ord=2, axis=1).reshape(-1, 1)
 
     # test
 
@@ -1942,15 +1942,18 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     X_test = X_test / np.linalg.norm(X_test, ord=2, axis=1).reshape(-1, 1)
 
     if args.submode == 'func' or args.submode == 'fairdp':
-        f_coff_0, f_coff_1, f_coff_2, Q_f = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda, mode=args.submode)
-        m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda, mode=args.submode)
+        f_coff_0, f_coff_1, f_coff_2, Q_f = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
+        m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
     else:
-        f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda, mode=args.submode)
-        m_coff_0, m_coff_1, m_coff_2 = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda, mode=args.submode)
+        f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
+                                                       mode=args.submode)
+        m_coff_0, m_coff_1, m_coff_2 = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
+                                                       mode=args.submode)
 
     model_mal = torch.randn((len(args.feature), 1), requires_grad=True).float()
     model_fem = torch.randn((len(args.feature), 1), requires_grad=True).float()
-
 
     # DEfining Early Stopping Object
     # es = EarlyStopping(patience=args.patience, verbose=False)
@@ -1988,9 +1991,11 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                 noise_f = torch.normal(0, 1, size=model_fem.size(), requires_grad=True).float()
                 noise_mal.append(noise_m)
                 noise_fem.append(noise_f)
-                loss_m = update_one_step(args=args, model=model_mal, model_=model_fem, coff=(m_coff_0, m_coff_1, m_coff_2),
-                                         Q=None, Q_= None, noise=noise_m)
-                loss_f = update_one_step(args=args, model=model_fem, model_=model_mal, coff=(f_coff_0, f_coff_1, f_coff_2),
+                loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
+                                         coff=(m_coff_0, m_coff_1, m_coff_2),
+                                         Q=None, Q_=None, noise=noise_m)
+                loss_f = update_one_step(args=args, model=model_fem, model_=model_mal,
+                                         coff=(f_coff_0, f_coff_1, f_coff_2),
                                          Q=None, Q_=None, noise=noise_f)
                 loss_mal += loss_m
                 loss_fem += loss_f
@@ -2035,30 +2040,22 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         model_fem = model_fem - args.lr * model_fem.grad
         global_model = (model_mal + model_fem) / 2
 
-        train_pred = torch.sigmoid(torch.mm(torch.from_numpy(X_train.astype(np.float32)), global_model))
-        valid_pred = torch.sigmoid(torch.mm(torch.from_numpy(X_valid.astype(np.float32)), global_model))
-        test_pred = torch.sigmoid(torch.mm(torch.from_numpy(X_test.astype(np.float32)), global_model))
-
-        # print(train_pred.max(), train_pred.min())
-
-        valid_male = torch.sigmoid(torch.mm(torch.from_numpy(X_mal_val.astype(np.float32)), global_model))
-        valid_female = torch.sigmoid(torch.mm(torch.from_numpy(X_fem_val.astype(np.float32)), global_model))
-
-        tn, fp, fn, tp = confusion_matrix(y_mal_val, np.round(valid_male.detach().numpy())).ravel()
-        male_tpr = tp / (tp + fn)
-        tn, fp, fn, tp = confusion_matrix(y_fem_val, np.round(valid_female.detach().numpy())).ravel()
-        female_tpr = tp / (tp + fn)
-
-        prob_male = np.sum(np.round(valid_male.detach().numpy())) / valid_male.shape[0]
-        prob_female = np.sum(np.round(valid_female.detach().numpy())) / valid_female.shape[0]
-
-        train_loss = np.mean(logloss(y=y_train, pred=train_pred.detach().numpy()))
-        valid_loss = np.mean(logloss(y=y_valid, pred=valid_pred.detach().numpy()))
-        test_loss = np.mean(logloss(y=y_test, pred=test_pred.detach().numpy()))
-
-        train_acc = accuracy_score(y_true=y_train, y_pred=np.round(train_pred.detach().numpy()))
-        valid_acc = accuracy_score(y_true=y_valid, y_pred=np.round(valid_pred.detach().numpy()))
-        test_acc = accuracy_score(y_true=y_test, y_pred=np.round(test_pred.detach().numpy()))
+        if args.submode == 'func' or args.submode == 'torch':
+            train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
+            valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
+            test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
+            _, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
+                                                                 y=y_mal_val, fair=True)
+            _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_fem_val,
+                                                                       y=y_fem_val, fair=True)
+        else:
+            acc, loss, _, tpr, prob = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
+                                            X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
+                                            y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
+            train_acc, valid_acc, test_acc = acc
+            train_loss, valid_loss, test_loss = loss
+            male_tpr, female_tpr = tpr
+            male_prob, female_prob = prob
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
@@ -2072,7 +2069,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['val_history_acc'].append(valid_acc)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-        history['demo_parity'].append(np.abs(prob_male - prob_female))
+        history['demo_parity'].append(np.abs(male_prob - female_prob))
         history['equal_odd'].append(np.abs(male_tpr - female_tpr))
         #
         # es(acc_score, model, args.save_path + model_name)

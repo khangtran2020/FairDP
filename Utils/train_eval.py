@@ -3,6 +3,8 @@ import torch
 from Utils.utils import get_gaussian_noise
 from opacus.utils.batch_memory_manager import BatchMemoryManager
 from copy import deepcopy
+from Utils.utils import logloss
+from sklearn.metrics import accuracy_score, confusion_matrix
 
 
 class EarlyStopping:
@@ -303,14 +305,59 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
         loss = (1 / args.num_draws) * (
                 coff_0 + torch.mm((model + noise).T, coff_1) + torch.mm(torch.mm((model + noise).T, coff_2),
                                                                         (model + noise))) + (
-                           1 / args.num_draws) * args.alpha * torch.norm(
+                       1 / args.num_draws) * args.alpha * torch.norm(
             model - model_, p=2)
         model.retain_grad()
         loss.backward()
     return loss.item()
 
-def fair_evaluate():
-    pass
+
+def fair_evaluate(args, model, noise, X, y, fair=False):
+    if args.submode == 'func' or args.submode == 'torch':
+        pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
+        loss = np.mean(logloss(y=y, pred=pred.detach().numpy()))
+        acc = accuracy_score(y_true=y, y_pred=pred.detach().numpy())
+        if fair:
+            tn, fp, fn, tp = confusion_matrix(y, np.round(pred.detach().numpy())).ravel()
+            tpr = tp / (tp + fn)
+            prob = np.sum(np.round(pred.detach().numpy())) / pred.shape[0]
+            return acc, loss, pred, tpr, prob
+        else:
+            return acc, loss, pred
+    else:
+        noise_m, noise_f = noise
+        X_train, X_valid, X_test, X_mal, X_fem = X
+        y_train, y_valid, y_test, y_mal, y_fem = y
+        pred_tr, pred_va, pred_te, pred_m, pred_f = (0.0 for i in range(5))
+        for i in range(args.num_draws):
+            temp = model + (1/2)*(noise_m[i] + noise_f[i])
+            pred_tr = pred_tr + torch.sigmoid(torch.mm(torch.from_numpy(X_train.astype(np.float32)), temp))
+            pred_va = pred_va + torch.sigmoid(torch.mm(torch.from_numpy(X_valid.astype(np.float32)), temp))
+            pred_te = pred_te + torch.sigmoid(torch.mm(torch.from_numpy(X_test.astype(np.float32)), temp))
+            pred_m = pred_m + torch.sigmoid(torch.mm(torch.from_numpy(X_mal.astype(np.float32)), temp))
+            pred_f = pred_f + torch.sigmoid(torch.mm(torch.from_numpy(X_fem.astype(np.float32)), temp))
+        pred_tr = (1 / args.num_draws) * pred_tr
+        pred_va = (1 / args.num_draws) * pred_va
+        pred_te = (1 / args.num_draws) * pred_te
+        pred_m = (1 / args.num_draws) * pred_m
+        pred_f = (1 / args.num_draws) * pred_f
+        acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
+        acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
+        acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
+        loss_tr = np.mean(logloss(y=y_train, pred=pred_tr.detach().numpy()))
+        loss_va = np.mean(logloss(y=y_valid, pred=pred_va.detach().numpy()))
+        loss_te = np.mean(logloss(y=y_test, pred=pred_te.detach().numpy()))
+
+        tn, fp, fn, tp = confusion_matrix(y_mal, np.round(pred_m.detach().numpy())).ravel()
+        male_tpr = tp / (tp + fn)
+        male_prob = np.sum(np.round(pred_m.detach().numpy())) / pred_m.shape[0]
+
+        tn, fp, fn, tp = confusion_matrix(y_fem, np.round(pred_f.detach().numpy())).ravel()
+        female_tpr = tp / (tp + fn)
+        female_prob = np.sum(np.round(pred_f.detach().numpy())) / pred_f.shape[0]
+
+        return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
+        male_tpr, female_tpr), (male_prob, female_prob)
 
 # def train_opacus(dataloader, model, criterion, optimizer, device, args):
 #     model.to(device)
