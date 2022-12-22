@@ -1980,8 +1980,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     noise_mal = []
     noise_fem = []
 
-    tk0 = tqdm(range(args.epochs), total=args.epochs)
-    for epoch in tk0:
+    # tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in range(args.epochs):
         loss_mal = 0
         loss_fem = 0
         if args.submode == 'fair':
@@ -2059,9 +2059,10 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
+        print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}".format(epoch, train_loss, train_acc, valid_loss, valid_acc))
         # print(loss_mal, loss_fem)
-        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
-                        Valid_ACC_SCORE=valid_acc)
+        # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
+        #                 Valid_ACC_SCORE=valid_acc)
         #
         history['train_history_loss'].append(train_loss)
         history['train_history_acc'].append(train_acc)
