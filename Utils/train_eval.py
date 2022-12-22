@@ -161,6 +161,7 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
 
     return train_loss / num_data_point, train_outputs, train_targets
 
+
 def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
     model.train()
@@ -191,7 +192,7 @@ def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, sc
         torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
         total_l2_norm = 0
         for p in model.named_parameters():
-            total_l2_norm += p[1].grad.detach().norm(p=2)**2
+            total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
             temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
         # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
         output = output.cpu().detach().numpy()
@@ -271,6 +272,45 @@ def train_fn_track_grad(dataloader, model, criterion, optimizer, device, schedul
 
     return train_loss / num_data_point, train_outputs, train_targets, np.mean(male_norm), np.mean(female_norm), np.std(
         male_norm), np.std(female_norm)
+
+
+def update_one_step(args, model, model_, coff, Q, Q_, noise):
+    if args.submode == 'func':
+        coff_0, coff_1, coff_2 = coff
+        Q = Q
+        loss = coff_0 + torch.mm(torch.mm(Q, model).T, coff_1) + torch.mm(
+            torch.mm(torch.mm(Q, model).T.float(), coff_2.float()), torch.mm(Q, model))
+        # model.retain_grad()
+        loss.backward()
+    elif args.submode == 'torch':
+        coff_0, coff_1, coff_2 = coff
+        loss = coff_0 + torch.mm(model.T, coff_1) + torch.mm(
+            torch.mm(model.T.float(), coff_2.float()), model)
+        # model.retain_grad()
+        loss.backward()
+    elif args.submode == 'fairdp':
+        coff_0, coff_1, coff_2 = coff
+        Q = Q
+        loss = (1 / args.num_draws) * (coff_0 + torch.mm(torch.mm(Q, model + noise).T, coff_1) + torch.mm(
+            torch.mm(torch.mm(Q, model + noise).T.float(), coff_2.float()),
+            torch.mm(Q, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
+            torch.mm(Q, model) - torch.mm(Q_, model_), p=2)
+        # model.retain_grad()
+        loss.backward()
+    elif args.submode == 'fair':
+        coff_0, coff_1, coff_2 = coff
+        # print(model.requires_grad)
+        loss = (1 / args.num_draws) * (
+                coff_0 + torch.mm((model + noise).T, coff_1) + torch.mm(torch.mm((model + noise).T, coff_2),
+                                                                        (model + noise))) + (
+                           1 / args.num_draws) * args.alpha * torch.norm(
+            model - model_, p=2)
+        model.retain_grad()
+        loss.backward()
+    return loss.item()
+
+def fair_evaluate():
+    pass
 
 # def train_opacus(dataloader, model, criterion, optimizer, device, args):
 #     model.to(device)
