@@ -2059,7 +2059,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
-        print(loss_mal, loss_fem)
+        # print(loss_mal, loss_fem)
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
                         Valid_ACC_SCORE=valid_acc)
         #
