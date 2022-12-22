@@ -2046,12 +2046,13 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
             _, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
                                                                  y=y_mal_val, fair=True)
-            _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_fem_val,
+            _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
+                                                                       X=X_fem_val,
                                                                        y=y_fem_val, fair=True)
         else:
             acc, loss, _, tpr, prob = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
-                                            X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
-                                            y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
+                                                    X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
+                                                    y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
             train_acc, valid_acc, test_acc = acc
             train_loss, valid_loss, test_loss = loss
             male_tpr, female_tpr = tpr
@@ -2059,7 +2060,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
-        print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}".format(epoch, train_loss, train_acc, valid_loss, valid_acc))
+        print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}".format(epoch, train_loss, train_acc,
+                                                                                          valid_loss, valid_acc))
         # print(loss_mal, loss_fem)
         # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
         #                 Valid_ACC_SCORE=valid_acc)
