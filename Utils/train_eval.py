@@ -4,7 +4,7 @@ from Utils.utils import get_gaussian_noise
 from opacus.utils.batch_memory_manager import BatchMemoryManager
 from copy import deepcopy
 from Utils.utils import logloss
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_score
 
 
 class EarlyStopping:
@@ -316,7 +316,7 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch':
         pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
         loss = np.mean(logloss(y=y, pred=pred.detach().numpy()))
-        acc = accuracy_score(y_true=y, y_pred=pred.detach().numpy())
+        acc = f1_score(y_true=y, y_pred=pred.detach().numpy())
         if fair:
             tn, fp, fn, tp = confusion_matrix(y, np.round(pred.detach().numpy())).ravel()
             tpr = tp / (tp + fn)
@@ -341,9 +341,9 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         pred_te = (1 / args.num_draws) * pred_te
         pred_m = (1 / args.num_draws) * pred_m
         pred_f = (1 / args.num_draws) * pred_f
-        acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
-        acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
-        acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
+        acc_tr = f1_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
+        acc_va = f1_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
+        acc_te = f1_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
         loss_tr = np.mean(logloss(y=y_train, pred=pred_tr.detach().numpy()))
         loss_va = np.mean(logloss(y=y_valid, pred=pred_va.detach().numpy()))
         loss_te = np.mean(logloss(y=y_test, pred=pred_te.detach().numpy()))
