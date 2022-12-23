@@ -1083,24 +1083,6 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     df_val_fem = female_df[female_df.fold == fold]
 
     # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    test_dataset = Data(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
     train_male_dataset = Data(
         X=df_train_mal[args.feature].values,
         y=df_train_mal[args.target].values,
@@ -1108,88 +1090,110 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     )
 
     train_female_dataset = Data(
-        X=df_train_fem[args.feature].values,
-        y=df_train_fem[args.target].values,
+        df_train_fem[args.feature].values,
+        df_train_fem[args.target].values,
         ismale=df_train_fem[args.z].values
     )
 
     valid_male_dataset = Data(
-        X=df_val_mal[args.feature].values,
-        y=df_val_mal[args.target].values,
+        df_val_mal[args.feature].values,
+        df_val_mal[args.target].values,
         ismale=df_val_mal[args.z].values
     )
 
     valid_female_dataset = Data(
-        X=df_val_fem[args.feature].values,
-        y=df_val_fem[args.target].values,
+        df_val_fem[args.feature].values,
+        df_val_fem[args.target].values,
         ismale=df_val_fem[args.z].values
     )
 
+    train_dataset = Data(
+        df_train[args.feature].values,
+        df_train[args.target].values,
+        ismale=df_train[args.z].values
+    )
+
+    valid_dataset = Data(
+        df_valid[args.feature].values,
+        df_valid[args.target].values,
+        ismale=df_valid[args.z].values
+    )
+
+    test_dataset = Data(
+        test_df[args.feature].values,
+        test_df[args.target].values,
+        ismale=test_df[args.z].values
+    )
+
     # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
+    sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
+    train_male_loader = DataLoader(
+        train_male_dataset,
+        batch_size=int(args.sampling_rate * len(train_male_dataset)),
         pin_memory=True,
         drop_last=True,
-        sampler=sampler,
+        sampler=sampler_male,
         num_workers=0
     )
 
-    valid_loader = DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=male_sampler,
-        pin_memory=True,
-        drop_last=True,
-    )
-    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
+    sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
     train_female_loader = DataLoader(
         train_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=female_sampler,
+        batch_size=int(args.sampling_rate * len(train_female_dataset)),
         pin_memory=True,
         drop_last=True,
+        sampler=sampler_female,
+        num_workers=0
     )
 
-    valid_male_loader = DataLoader(
+    valid_male_loader = torch.utils.data.DataLoader(
         valid_male_dataset,
         batch_size=args.batch_size,
-        num_workers=4,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         drop_last=False,
     )
 
-    valid_female_loader = DataLoader(
+    valid_female_loader = torch.utils.data.DataLoader(
         valid_female_dataset,
         batch_size=args.batch_size,
-        num_workers=4,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         drop_last=False,
     )
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=0,
+        shuffle=False,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    args.n_batch = len(train_male_loader)
+    args.bs_male = int(args.sampling_rate * len(train_male_dataset))
+    args.bs_female = int(args.sampling_rate * len(train_female_dataset))
+    print(len(train_male_dataset), len(train_female_dataset), args.n_batch)
 
     # Defining Model for specific fold
     model = NormNN(args.input_dim, args.n_hid, args.output_dim)
@@ -1248,13 +1252,14 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     i = 0
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        _, _, _ = train_fn_dpsgd(train_male_loader, model_male, criterion, optimizer_male, device,
-                                 scheduler=None, clipping=args.clip,
-                                 noise_scale=args.ns)
-        _, _, _ = train_fn_dpsgd(train_female_loader, model_female, criterion, optimizer_female, device,
-                                 scheduler=None, clipping=args.clip,
-                                 noise_scale=args.ns)
-        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(train_loader,
+        _, _, _ = train_fn_dpsgd_one_batch(train_male_loader, model_male, criterion, optimizer_male, device,
+                                           scheduler=None, clipping=args.clip,
+                                           noise_scale=args.ns)
+        _, _, _ = train_fn_dpsgd_one_batch(train_female_loader, model_female, criterion, optimizer_female, device,
+                                           scheduler=None, clipping=args.clip,
+                                           noise_scale=args.ns)
+        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(train_male_loader,
+                                                                                                           train_female_loader,
                                                                                                            model,
                                                                                                            criterion,
                                                                                                            optimizer,
@@ -2061,7 +2066,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
         print("Epoch {}: train loss {}, train f1 {}, valid loss {}, valid f1 {}".format(epoch, train_loss, train_acc,
-                                                                                          valid_loss, valid_acc))
+                                                                                        valid_loss, valid_acc))
         # print(loss_mal, loss_fem)
         # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
         #                 Valid_ACC_SCORE=valid_acc)
