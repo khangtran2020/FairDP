@@ -1992,8 +1992,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         if args.submode == 'fair':
             # print(model_mal.requires_grad, model_fem.requires_grad)
             for i in range(args.num_draws):
-                noise_m = torch.normal(0, 1, size=model_mal.size(), requires_grad=True).float()
-                noise_f = torch.normal(0, 1, size=model_fem.size(), requires_grad=True).float()
+                noise_m = torch.normal(0, args.ns_, size=model_mal.size(), requires_grad=True).float()
+                noise_f = torch.normal(0, args.ns_, size=model_fem.size(), requires_grad=True).float()
                 noise_mal.append(noise_m)
                 noise_fem.append(noise_f)
                 loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
