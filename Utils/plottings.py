@@ -614,24 +614,20 @@ def print_history_func(fold, history, num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        history['demo_parity'],
+        history['disp_imp'],
         '-o',
-        label='Demographic Parity',
-        color='blue'
+        label='Imperical results',
     )
-    axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
+    icml_b = icml_bound(args=args, d=history['disp_imp'][-1])
+    axs[2].plot(
+        np.arange(num_epochs),
+        np.ones(num_epochs)*icml_b,
+        '-*',
+        label='ICML bound',
+    )
+    axs[2].set_ylabel(r'$L_1$-norm', color="blue", size=14)
     axs[2].set_xlabel('Epochs', size=14)
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
-
-    ax2 = axs[2].twinx()
-    ax2.plot(
-        np.arange(num_epochs),
-        history['equal_odd'],
-        '--*',
-        label='Equality of Odds',
-        color='red'
-    )
-    ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
     plt.savefig(save_name)
 
 

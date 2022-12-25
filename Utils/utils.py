@@ -91,6 +91,5 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
         coff_1 = np.dot(coff_1, V.T).astype(np.float32)
         return coff_0, (1/num_data_point)*torch.from_numpy(coff_1.reshape(-1, 1)), (1/num_data_point)*torch.from_numpy(coff_2), V,
 
-def icml_bound(args, model, model_):
-    d = torch.norm(model - model_, p=2)
+def icml_bound(args, d):
     return d/(np.sqrt(2*np.pi)*args.ns_)

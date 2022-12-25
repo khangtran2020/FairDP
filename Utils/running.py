@@ -2079,6 +2079,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['test_history_acc'].append(test_acc)
         history['demo_parity'].append(np.abs(male_prob - female_prob))
         history['equal_odd'].append(np.abs(male_tpr - female_tpr))
+        history['disp_imp'].append(torch.norm(model_mal - model_fem, p=2).item())
         #
         # es(acc_score, model, args.save_path + model_name)
         #
