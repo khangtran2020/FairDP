@@ -323,13 +323,12 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
     elif args.submode == 'fairdp':
         coff_0, coff_1, coff_2 = coff
         Q = torch.from_numpy(Q)
-        Q_ = torch.from_numpy(Q_)
         # print(Q.size(), Q_.size(), model.size(), model_.size())
         loss = (1 / args.num_draws) * (coff_0 + torch.mm(torch.mm(Q, model + noise).T, coff_1) + torch.mm(
             torch.mm(torch.mm(Q, model + noise).T.float(), coff_2.float()),
             torch.mm(Q, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
             model-model_, p=2)
-        # model.retain_grad()
+        model.retain_grad()
         loss.backward()
     elif args.submode == 'fair':
         coff_0, coff_1, coff_2 = coff
@@ -392,7 +391,7 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         male_tpr, female_tpr), (male_prob, female_prob)
 
 class ReduceOnPlatau:
-    def __init__(self, patience=7, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 1e-4, step=5e-3):
+    def __init__(self, patience=7, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 1e-6, step=5e-3):
         self.patience = patience
         self.counter = 0
         self.mode = mode

@@ -2041,6 +2041,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             loss_mal = loss_m
             loss_fem = loss_f
         # with torch.no_grad():
+        # print('Epoch {}:'.format(epoch),model_mal.grad, model_fem.grad)
         model_mal = model_mal - args.lr * model_mal.grad
         model_fem = model_fem - args.lr * model_fem.grad
         global_model = (model_mal + model_fem) / 2
