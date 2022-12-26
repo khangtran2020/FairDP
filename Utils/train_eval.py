@@ -425,6 +425,7 @@ class ReduceOnPlatau:
                 else:
                     self.args.lr -= self.step
                 print("Reduce learning rate to {}".format(self.args.lr))
+                self.counter = 0
         else:
             self.best_score = score
             self.counter = 0
