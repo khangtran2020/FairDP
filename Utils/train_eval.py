@@ -389,6 +389,47 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
         male_tpr, female_tpr), (male_prob, female_prob)
 
+class ReduceOnPlatau:
+    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, args=None, min_lr = 1e-4, step=5e-3):
+        self.patience = patience
+        self.counter = 0
+        self.mode = mode
+        self.delta = delta
+        self.verbose = verbose
+        self.args = args
+        self.min_lr = min_lr
+        self.step = step
+        self.best_score = None
+        if self.mode == "min":
+            self.val_score = np.Inf
+        else:
+            self.val_score = -np.Inf
+
+    def __call__(self, epoch_score):
+
+        if self.mode == "min":
+            score = -1.0 * epoch_score
+        else:
+            score = np.copy(epoch_score)
+
+        if self.best_score is None:
+            self.best_score = score
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                print('EarlyStopping counter: {} out of {}'.format(self.counter, self.patience))
+
+            if self.counter >= self.patience:
+                if self.args.lr - self.step < self.min_lr:
+                    self.args.lr = self.min_lr
+                else:
+                    self.args.lr -= self.step
+                print("Reduce learning rate to {}".format(self.args.lr))
+        else:
+            self.best_score = score
+            self.counter = 0
+        return self.args
+
 # def train_opacus(dataloader, model, criterion, optimizer, device, args):
 #     model.to(device)
 #     model.train()
