@@ -2020,8 +2020,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                          Q=Q_f, Q_=Q_m, noise=noise_f)
                 loss_mal += loss_m
                 loss_fem += loss_f
-            loss_mal = loss_mal / args.num_draw
-            loss_fem = loss_fem / args.num_draw
+            loss_mal = loss_mal / args.num_draws
+            loss_fem = loss_fem / args.num_draws
         elif args.submode == 'func':
             loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
                                      coff=(m_coff_0, m_coff_1, m_coff_2),

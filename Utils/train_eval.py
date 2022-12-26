@@ -322,11 +322,13 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
         loss.backward()
     elif args.submode == 'fairdp':
         coff_0, coff_1, coff_2 = coff
-        Q = Q
+        Q = torch.from_numpy(Q)
+        Q_ = torch.from_numpy(Q_)
+        # print(Q.size(), Q_.size(), model.size(), model_.size())
         loss = (1 / args.num_draws) * (coff_0 + torch.mm(torch.mm(Q, model + noise).T, coff_1) + torch.mm(
             torch.mm(torch.mm(Q, model + noise).T.float(), coff_2.float()),
             torch.mm(Q, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
-            torch.mm(Q, model) - torch.mm(Q_, model_), p=2)
+            model-model_, p=2)
         # model.retain_grad()
         loss.backward()
     elif args.submode == 'fair':
