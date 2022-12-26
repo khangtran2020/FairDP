@@ -2007,9 +2007,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             # loss_mal = loss_mal/args.num_draws
             # loss_fem = loss_fem/args.num_draws
         elif args.submode == 'fairdp':
-            for i in range(args.num_draw):
-                noise_m = torch.normal(0, 1, size=model_mal.size(), requires_grad=False).float()
-                noise_f = torch.normal(0, 1, size=model_fem.size(), requires_grad=False).float()
+            for i in range(args.num_draws):
+                noise_m = torch.normal(0, args.ns_, size=model_mal.size(), requires_grad=False).float()
+                noise_f = torch.normal(0, args.ns_, size=model_fem.size(), requires_grad=False).float()
                 noise_mal.append(noise_m)
                 noise_fem.append(noise_f)
                 loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
