@@ -37,9 +37,12 @@ def add_model_group(group):
 
 def add_dp_group(group):
     group.add_argument("--tar_eps", type=float, default=1.0, help="learning rate")
-    group.add_argument("--lamda", type=float, default=1.0, help="learning rate")
     group.add_argument('--tar_delt', type=float, default=1e-4, help='number of folds for cross-validation')
-    group.add_argument('--MAX_PHYSICAL_BATCH_SIZE', type=int, default=128, help="batch size for training process")
+
+def add_func_group(group):
+    group.add_argument("--lamda", type=float, default=1.0, help="regularizer")
+    group.add_argument("--lr_step", type=float, default=1e-3, help="learning rate reduction rate")
+    group.add_argument("--lr_patience", type=int, default=10, help="patient to reduce learning rate")
 
 def parse_args():
     parser = argparse.ArgumentParser()
