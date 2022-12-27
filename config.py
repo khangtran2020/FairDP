@@ -50,9 +50,11 @@ def parse_args():
     model_group = parser.add_argument_group(title="Model-related configuration")
     general_group = parser.add_argument_group(title="General configuration")
     opacus_group = parser.add_argument_group(title="Opacus configuration")
+    funct_group = parser.add_argument_group(title="functional mechanism configuration")
 
     add_data_group(data_group)
     add_model_group(model_group)
     add_general_group(general_group)
     add_dp_group(opacus_group)
+    add_func_group(funct_group)
     return parser.parse_args()
