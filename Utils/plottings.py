@@ -625,6 +625,7 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         '-*',
         label='ICML bound',
     )
+    axs[2].legend()
     axs[2].set_ylabel(r'$L_1$-norm', color="blue", size=14)
     axs[2].set_xlabel('Epochs', size=14)
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
