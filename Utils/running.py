@@ -1952,7 +1952,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     model_fem = torch.randn((len(args.feature), 1), requires_grad=True).float()
 
     # DEfining Early Stopping Object
-    # es = EarlyStopping(patience=args.patience, verbose=False)
+    es = EarlyStopping(patience=args.patience, verbose=False, run_mode=args.mode)
     reduce_lr = ReduceOnPlatau(patience=args.patience, args=args, mode='min')
     # History dictionary to store everything
     history = {
@@ -2073,15 +2073,36 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['equal_odd'].append(np.abs(male_tpr - female_tpr))
         history['disp_imp'].append(torch.norm(model_mal - model_fem, p=2).item())
         #
-        # es(acc_score, model, args.save_path + model_name)
-
+        es(valid_acc, global_model, args.save_path + model_name)
         args = reduce_lr(epoch_score=valid_loss)
-        #
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
+        if es.early_stop:
+            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+            break
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
+    global_model = torch.load(args.save_path + model_name)
+    if args.submode == 'func' or args.submode == 'torch':
+        train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
+        valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
+        test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
+        _, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
+                                                             y=y_mal_val, fair=True)
+        _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
+                                                                   X=X_fem_val,
+                                                                   y=y_fem_val, fair=True)
+    else:
+        acc, loss, _, tpr, prob = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
+                                                X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
+                                                y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
+        train_acc, valid_acc, test_acc = acc
+        train_loss, valid_loss, test_loss = loss
+        male_tpr, female_tpr = tpr
+        male_prob, female_prob = prob
+    history['best_test'] = test_acc
+    history['best_demo_parity'] = np.abs(male_prob - female_prob)
+    history['best_equal_odd'] = np.abs(male_tpr - female_tpr)
+    history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
+
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):
 #     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(

@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False):
+    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, run_mode=None):
         self.patience = patience
         self.counter = 0
         self.mode = mode
@@ -20,6 +20,7 @@ class EarlyStopping:
             self.val_score = np.Inf
         else:
             self.val_score = -np.Inf
+        self.run_mode = run_mode
 
     def __call__(self, epoch_score, model, model_path):
 
@@ -47,7 +48,10 @@ class EarlyStopping:
         if epoch_score not in [-np.inf, np.inf, -np.nan, np.nan]:
             if self.verbose:
                 print('Validation score improved ({} --> {}). Saving model!'.format(self.val_score, epoch_score))
-            torch.save(model.state_dict(), model_path)
+            if self.run_mode != 'func':
+                torch.save(model.state_dict(), model_path)
+            else:
+                torch.save(model, model_path)
         self.val_score = epoch_score
 
 
