@@ -25,17 +25,8 @@ def bound_alg1(args):
 
 
 def save_res(fold, args, dct, current_time):
-    save_name = args.res_path + '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
-                                                                                             args.mode, fold,
-                                                                                             args.ns,
-                                                                                             args.clip,
-                                                                                             args.epochs,
-                                                                                             current_time.day,
-                                                                                             current_time.month,
-                                                                                             current_time.year,
-                                                                                             current_time.hour,
-                                                                                             current_time.minute,
-                                                                                             current_time.second)
+    name = get_name(args=args,current_date=current_time, fold=fold)
+    save_name = args.res_path + name
     with open('{}.pkl'.format(save_name), 'wb') as f:
         pickle.dump(dct, f)
 
@@ -93,3 +84,29 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
 
 def icml_bound(args, d):
     return d/(np.sqrt(2*np.pi)*args.ns_)
+
+def get_name(args, current_date, fold):
+    if args.mode != 'func':
+        return '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+                                                                        args.mode, fold,
+                                                                        args.ns,
+                                                                        args.clip,
+                                                                        args.epochs,
+                                                                        current_date.day,
+                                                                        current_date.month,
+                                                                        current_date.year,
+                                                                        current_date.hour,
+                                                                        current_date.minute,
+                                                                        current_date.second)
+    else:
+        return '{}_{}_fold_{}_eps_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+                                                                            args.mode, fold,
+                                                                            args.tar_eps,
+                                                                            args.clip,
+                                                                            args.epochs,
+                                                                            current_date.day,
+                                                                            current_date.month,
+                                                                            current_date.year,
+                                                                            current_date.hour,
+                                                                            current_date.minute,
+                                                                            current_date.second)

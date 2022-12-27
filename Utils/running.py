@@ -1891,17 +1891,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
 
 def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_df, female_df, args, device,
                                                  current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
+    name = get_name(args=args,current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
 
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
         drop=True)
