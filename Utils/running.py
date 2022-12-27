@@ -130,8 +130,7 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
         history['val_history_acc'].append(acc_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
 
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -264,8 +263,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         history['val_history_acc'].append(acc_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
 
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -501,8 +499,7 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         history['disp_imp'].append(max(male_norm, female_norm))
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -763,8 +760,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         history['demo_parity'].append(demo_p)
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
-
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -1032,7 +1028,7 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
         history['epsilon'].append(eps)
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -1258,15 +1254,16 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         _, _, _ = train_fn_dpsgd_one_batch(train_female_loader, model_female, criterion, optimizer_female, device,
                                            scheduler=None, clipping=args.clip,
                                            noise_scale=args.ns)
-        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(train_male_loader,
-                                                                                                           train_female_loader,
-                                                                                                           model,
-                                                                                                           criterion,
-                                                                                                           optimizer,
-                                                                                                           device,
-                                                                                                           scheduler=None,
-                                                                                                           clipping=args.clip,
-                                                                                                           noise_scale=args.ns)
+        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(
+            train_male_loader,
+            train_female_loader,
+            model,
+            criterion,
+            optimizer,
+            device,
+            scheduler=None,
+            clipping=args.clip,
+            noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
@@ -1310,8 +1307,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         history['female_norm'].append(female_n)
         history['male_std'].append(male_std)
         history['female_std'].append(female_std)
-
-        es(acc_score, model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=sargs.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -1591,9 +1587,11 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        es(val_acc, global_model, args.save_path + model_name)
-        es_male(acc_male_score, model_male, args.save_path + 'male_{}'.format(model_name))
-        es_female(acc_female_score, model_female, args.save_path + 'female_{}'.format(model_name))
+        es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=sargs.save_path + model_name)
+        es_male(epoch=epoch, epoch_score=acc_male_score, model=model_male,
+                model_path=args.save_path + 'male_{}'.format(model_name))
+        es_female(epoch=epoch, epoch_score=acc_female_score, model=model_female,
+                  model_path=args.save_path + 'female_{}'.format(model_name))
 
     global_model.load_state_dict(torch.load(args.save_path + model_name))
     model_male.load_state_dict(torch.load(args.save_path + 'male_{}'.format(model_name)))
@@ -1866,9 +1864,11 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
         history['male_norm'].append(male_norm)
         history['female_norm'].append(female_norm)
 
-        es(val_acc, global_model, args.save_path + model_name)
-        es_male(acc_male_score, model_male, args.save_path + 'male_{}'.format(model_name))
-        es_female(acc_female_score, model_female, args.save_path + 'female_{}'.format(model_name))
+        es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=sargs.save_path + model_name)
+        es_male(epoch=epoch, epoch_score=acc_male_score, model=model_male,
+                model_path=args.save_path + 'male_{}'.format(model_name))
+        es_female(epoch=epoch, epoch_score=acc_female_score, model=model_female,
+                  model_path=args.save_path + 'female_{}'.format(model_name))
 
     global_model.load_state_dict(torch.load(args.save_path + model_name))
     model_male.load_state_dict(torch.load(args.save_path + 'male_{}'.format(model_name)))
@@ -1891,7 +1891,7 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
 
 def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_df, female_df, args, device,
                                                  current_time):
-    name = get_name(args=args,current_date=current_time, fold=fold)
+    name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
 
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
@@ -2058,7 +2058,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
         print("Epoch {}: train loss {}, train auc {}, valid loss {}, valid auc {}".format(epoch, train_loss, train_acc,
-                                                                                        valid_loss, valid_acc))
+                                                                                          valid_loss, valid_acc))
         # print(loss_mal, loss_fem)
         # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
         #                 Valid_ACC_SCORE=valid_acc)
@@ -2073,7 +2073,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['equal_odd'].append(np.abs(male_tpr - female_tpr))
         history['disp_imp'].append(torch.norm(model_mal - model_fem, p=2).item())
         #
-        es(valid_acc, global_model, args.save_path + model_name)
+        es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=sargs.save_path + model_name)
         args = reduce_lr(epoch_score=valid_loss)
         if es.early_stop:
             print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -2102,7 +2102,6 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     history['best_demo_parity'] = np.abs(male_prob - female_prob)
     history['best_equal_odd'] = np.abs(male_tpr - female_tpr)
     history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
-
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):
 #     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(

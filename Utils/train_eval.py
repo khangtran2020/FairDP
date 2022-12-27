@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, run_mode=None):
+    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, run_mode=None, skip_ep = 100):
         self.patience = patience
         self.counter = 0
         self.mode = mode
@@ -21,9 +21,11 @@ class EarlyStopping:
         else:
             self.val_score = -np.Inf
         self.run_mode = run_mode
+        self.skip_ep = skip_ep
 
-    def __call__(self, epoch_score, model, model_path):
-
+    def __call__(self, epoch, epoch_score, model, model_path):
+        if self.run_mode == 'func' and epoch < self.skip_ep:
+            return
         if self.mode == "min":
             score = -1.0 * epoch_score
         else:
