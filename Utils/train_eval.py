@@ -391,7 +391,7 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         male_tpr, female_tpr), (male_prob, female_prob)
 
 class ReduceOnPlatau:
-    def __init__(self, patience=7, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 1e-4, step=5e-3):
+    def __init__(self, patience=7, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 5e-5, step=5e-3):
         self.patience = patience
         self.counter = 0
         self.mode = mode
