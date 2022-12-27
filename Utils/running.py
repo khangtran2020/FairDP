@@ -2075,9 +2075,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         #
         es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
         args = reduce_lr(epoch_score=valid_loss)
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
     global_model = torch.load(args.save_path + model_name)
