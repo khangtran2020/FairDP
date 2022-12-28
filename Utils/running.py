@@ -1953,7 +1953,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False, run_mode=args.mode)
-    reduce_lr = ReduceOnPlatau(args=args, mode='max')
+    # reduce_lr = ReduceOnPlatau(args=args, mode='max')
     # History dictionary to store everything
     history = {
         'train_history_loss': [],
@@ -2058,9 +2058,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
-        print("Epoch {}: train loss {}, train auc {}, valid loss {}, valid auc {}".format(epoch, train_loss, train_acc,
-                                                                                          valid_loss, valid_acc))
-        # print('Epoch {}: Loss on male {}, female {}'.format(epoch, loss_mal, loss_fem))
+        # print("Epoch {}: train loss {}, train auc {}, valid loss {}, valid auc {}".format(epoch, train_loss, train_acc,
+        #                                                                                   valid_loss, valid_acc))
+        print('Epoch {}: Loss on male {}, female {}'.format(epoch, loss_mal, loss_fem))
         # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
         #                 Valid_ACC_SCORE=valid_acc)
         #
@@ -2075,7 +2075,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['disp_imp'].append(torch.norm(model_mal - model_fem, p=2).item())
         #
         es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
-        args = reduce_lr(epoch_score=valid_acc)
+        # args = reduce_lr(epoch_score=valid_acc)
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
