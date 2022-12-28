@@ -346,6 +346,7 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
             model - model_, p=2)
         model.retain_grad()
         loss.backward()
+    print(model.grad)
     return loss.item()
 
 
