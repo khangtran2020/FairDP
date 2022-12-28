@@ -56,7 +56,7 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     num_data_point = X.shape[0]
     num_feat = X.shape[1]
     sensitivity = num_feat**2/4 + 3*num_feat
-#     lbda = sensitivity*4/epsilon
+    lbda = sensitivity*4/epsilon
     coff_0 = 1.0
     coff_1 = np.sum(X/2 - X*y, axis = 0).astype(np.float32)
     coff_2 = np.dot(X.T, X).astype(np.float32)
