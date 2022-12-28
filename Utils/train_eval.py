@@ -315,7 +315,7 @@ def train_fn_track_grad(dataloader, dataloader_, model, criterion, optimizer, de
 def update_one_step(args, model, model_, coff, Q, Q_, noise):
     if args.submode == 'func':
         coff_0, coff_1, coff_2 = coff
-        Q = Q
+        Q = torch.from_numpy(Q)
         loss = coff_0 + torch.mm(torch.mm(Q, model).T, coff_1) + torch.mm(
             torch.mm(torch.mm(Q, model).T.float(), coff_2.float()), torch.mm(Q, model))
         model.retain_grad()
