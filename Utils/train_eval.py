@@ -353,7 +353,7 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
 def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch':
         pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
-        loss = logloss(y=y, pred=pred)
+        loss = logloss(y=y, pred=pred.detach().numpy())
         acc = roc_auc_score(y_true=y, y_score=pred.detach().numpy())
         if fair:
             tn, fp, fn, tp = confusion_matrix(y, np.round(pred.detach().numpy())).ravel()
