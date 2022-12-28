@@ -480,7 +480,7 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['train_history_acc'],
         '-o',
-        label='Train AUC',
+        label='Train',
         color='#ff7f0e'
     )
 
@@ -488,7 +488,7 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['test_history_acc'],
         '--o',
-        label='Test AUC',
+        label='Test',
         color='#1f77b4'
     )
 
@@ -515,7 +515,7 @@ def print_history_func(fold, history, num_epochs, args, current_time):
     #     size=14
     # )
 
-    axs[0].set_ylabel('AUC', size=14)
+    axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
     axs[0].set_title(f'FOLD {fold + 1}', size=18)
     axs[0].legend()
@@ -542,7 +542,7 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['test_history_loss'],
         ':*',
-        label='Val Loss',
+        label='Test Loss',
         color='#d62728'
     )
 
