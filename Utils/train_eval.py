@@ -354,7 +354,7 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch':
         pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
         loss = logloss(y=y, pred=pred.detach().numpy())
-        acc = roc_auc_score(y_true=y, y_score=pred.detach().numpy())
+        acc = accuracy_score(y_true=y, y_pred=np.round(pred.detach().numpy()))
         if fair:
             tn, fp, fn, tp = confusion_matrix(y, np.round(pred.detach().numpy())).ravel()
             tpr = tp / (tp + fn)
@@ -379,9 +379,9 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         pred_te = (1 / args.num_draws) * pred_te
         pred_m = (1 / args.num_draws) * pred_m
         pred_f = (1 / args.num_draws) * pred_f
-        acc_tr = roc_auc_score(y_true=y_train, y_score=pred_tr.detach().numpy())
-        acc_va = roc_auc_score(y_true=y_valid, y_score=pred_va.detach().numpy())
-        acc_te = roc_auc_score(y_true=y_test, y_score=pred_te.detach().numpy())
+        acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
+        acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
+        acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
         loss_tr = logloss(y=y_train, pred=pred_tr.detach().numpy())
         loss_va = logloss(y=y_valid, pred=pred_va.detach().numpy())
         loss_te = logloss(y=y_test, pred=pred_te.detach().numpy())
