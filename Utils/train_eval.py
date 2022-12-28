@@ -318,13 +318,13 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
         Q = Q
         loss = coff_0 + torch.mm(torch.mm(Q, model).T, coff_1) + torch.mm(
             torch.mm(torch.mm(Q, model).T.float(), coff_2.float()), torch.mm(Q, model))
-        # model.retain_grad()
+        model.retain_grad()
         loss.backward()
     elif args.submode == 'torch':
         coff_0, coff_1, coff_2 = coff
         loss = coff_0 + torch.mm(model.T, coff_1) + torch.mm(
             torch.mm(model.T.float(), coff_2.float()), model)
-        # model.retain_grad()
+        model.retain_grad()
         loss.backward()
     elif args.submode == 'fairdp':
         coff_0, coff_1, coff_2 = coff
