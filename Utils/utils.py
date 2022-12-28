@@ -73,7 +73,7 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
         return coff_0, (1/num_data_point)*torch.from_numpy(coff_1.reshape(-1, 1)), (1/num_data_point)*torch.from_numpy(coff_2)
     elif mode == 'func' or mode == 'fairdp':
         coff_1 = coff_1 + noise_1
-        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T #+ lbda*np.identity(num_feat)
+        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T + lbda*np.identity(num_feat)
         w, V = np.linalg.eig(coff_2)
         indx = np.where(w > 0)[0]
         w = w[indx].astype(np.float32)
