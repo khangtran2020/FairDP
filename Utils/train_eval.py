@@ -381,9 +381,9 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
         acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
         acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
-        loss_tr = np.mean(logloss(y=y_train, pred=pred_tr.detach().numpy()))
-        loss_va = np.mean(logloss(y=y_valid, pred=pred_va.detach().numpy()))
-        loss_te = np.mean(logloss(y=y_test, pred=pred_te.detach().numpy()))
+        loss_tr = logloss(y=y_train, pred=pred_tr.detach().numpy())
+        loss_va = logloss(y=y_valid, pred=pred_va.detach().numpy())
+        loss_te = logloss(y=y_test, pred=pred_te.detach().numpy())
 
         tn, fp, fn, tp = confusion_matrix(y_mal, np.round(pred_m.detach().numpy())).ravel()
         male_tpr = tp / (tp + fn)
