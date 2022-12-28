@@ -3,7 +3,7 @@ import random
 import os
 import numpy as np
 import torch
-
+from sklearn.metrics import log_loss
 
 def get_gaussian_noise(clipping_val, noise_scale):
     return noise_scale * clipping_val
@@ -49,7 +49,7 @@ def sigmoid(x):
 
 
 def logloss(y, pred):
-    return -1 * y * np.log2(pred + 1e-6) - (1 - y) * np.log2(1 - pred + 1e-6)
+    return log_loss(y_true=y, y_pred=pred)
 
 
 def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
