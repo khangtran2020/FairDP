@@ -1057,24 +1057,15 @@ def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, curre
 
 
 def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
 
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
+    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
+        drop=True)
+    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
+        drop=True)
     df_train_mal = male_df[male_df.fold != fold]
     df_train_fem = female_df[female_df.fold != fold]
-
     df_val_mal = male_df[male_df.fold == fold]
     df_val_fem = female_df[female_df.fold == fold]
 
@@ -1189,28 +1180,25 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     args.n_batch = len(train_male_loader)
     args.bs_male = int(args.sampling_rate * len(train_male_dataset))
     args.bs_female = int(args.sampling_rate * len(train_female_dataset))
-    print(len(train_male_dataset), len(train_female_dataset), args.n_batch)
+    print(len(train_male_dataset), len(train_female_dataset), args.n_batch, args.bs_male + args.bs_female)
+    print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
-    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
     model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model.to(device)
+    global_model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+
     model_male.to(device)
     model_female.to(device)
+    global_model.to(device)
 
     # DEfining criterion
     criterion = torch.nn.BCELoss()
     criterion.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
                                                                 factor=0.1, patience=10, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
@@ -1222,115 +1210,103 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
-
     # History dictionary to store everything
     history = {
         'train_history_loss': [],
         'train_history_acc': [],
         'val_history_loss': [],
         'val_history_acc': [],
-        'demo_parity': [],
-        'equal_odd': [],
-        'disp_imp': [],
         'test_history_loss': [],
         'test_history_acc': [],
+        'demo_parity': [],
         'best_test': 0,
         'best_demo_parity': 0,
-        'best_equal_odd': 0,
-        'best_disp_imp': 0,
-        'male_norm': [],
-        'female_norm': [],
-        'male_std': [],
-        'female_std': []
+        'best_epoch': 0,
+        'empi_bound': []
     }
 
     # THE ENGINE LOOP
-    i = 0
+    M = 0.0
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        _, _, _ = train_fn_dpsgd_one_batch(train_male_loader, model_male, criterion, optimizer_male, device,
-                                           scheduler=None, clipping=args.clip,
+        global_dict = global_model.state_dict()
+        model_male.load_state_dict(global_dict)
+        model_female.load_state_dict(global_dict)
+
+        _, _, _, male_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_male_loader,
+                                           model=model_male,
+                                           criterion=criterion,
+                                           optimizer=optimizer_male,
+                                           device=device,
+                                           scheduler=None,
+                                           clipping=args.clip,
                                            noise_scale=args.ns)
-        _, _, _ = train_fn_dpsgd_one_batch(train_female_loader, model_female, criterion, optimizer_female, device,
-                                           scheduler=None, clipping=args.clip,
+
+        _, _, _, female_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_female_loader,
+                                           model=model_female,
+                                           criterion=criterion,
+                                           optimizer=optimizer_female,
+                                           device=device,
+                                           scheduler=None,
+                                           clipping=args.clip,
                                            noise_scale=args.ns)
-        train_loss, train_out, train_targets, male_n, female_n, male_std, female_std = train_fn_track_grad(
-            train_male_loader,
-            train_female_loader,
-            model,
-            criterion,
-            optimizer,
-            device,
-            scheduler=None,
-            clipping=args.clip,
-            noise_scale=args.ns)
-        val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
-        _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
-        _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
-        test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+
+        grad_norm = 0
+        for p in global_model.named_parameters():
+            grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
+        M_t = get_Mt(args=args, norm_grad=grad_norm.item())
+        M += M_t
+        male_dict = model_male.state_dict()
+        female_dict = model_female.state_dict()
+        for key in global_dict.keys():
+            global_dict[key] = torch.div(deepcopy(male_dict[key]) + deepcopy(female_dict[key]), 2)
+
+        global_model.load_state_dict(global_dict)
+
+        val_male_loss, outputs_male, targets_male = eval_fn(valid_male_loader, global_model, criterion, device)
+        val_female_loss, outputs_female, targets_female = eval_fn(valid_female_loader, global_model, criterion, device)
+        train_loss, train_output, train_target = eval_fn(train_loader, global_model, criterion, device)
+        valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
+        test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
+
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                                   model=model, device=device)
-        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                          female_loader=valid_female_loader, model=model, device=device)
-        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                                  female_loader=valid_female_loader,
-                                                  global_model=model,
-                                                  male_model=model_male,
-                                                  female_model=model_female,
-                                                  num_male=len(df_val_mal),
-                                                  num_female=len(df_val_fem),
-                                                  device=device)
-        train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
-        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
-        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+                                   model=global_model, device=device)
 
-        male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
-        female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
+        acc_male_score = accuracy_score(targets_male, np.round(np.array(outputs_male)))
+        acc_female_score = accuracy_score(targets_female, np.round(np.array(outputs_female)))
+        train_acc = accuracy_score(train_target, np.round(np.array(train_output)))
+        val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
+        test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
 
-        scheduler.step(acc_score)
-        scheduler_male.step(male_acc_score)
-        scheduler_female.step(female_acc_score)
+        scheduler_male.step(acc_male_score)
+        scheduler_female.step(acc_female_score)
 
-        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
-                        Valid_ACC_SCORE=acc_score)
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
+                        Valid_ACC_SCORE=val_acc)
 
-        history['train_history_loss'].append(train_loss)
-        history['train_history_acc'].append(train_acc)
-        history['val_history_loss'].append(val_loss)
-        history['val_history_acc'].append(acc_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(valid_loss)
+        history['val_history_acc'].append(val_acc)
         history['demo_parity'].append(demo_p)
-        history['disp_imp'].append(max(male_norm, female_norm))
-        history['equal_odd'].append(equal_odd)
-        history['male_norm'].append(male_n)
-        history['female_norm'].append(female_n)
-        history['male_std'].append(male_std)
-        history['female_std'].append(female_std)
-        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+        history['empi_bound'].append(bound_kl_emp(M))
+
+
+        es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
-    model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+    global_model.load_state_dict(torch.load(args.save_path + model_name))
+    test_loss, test_outputs, test_targets = eval_fn(test_loader, global_model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                               model=model, device=device)
-    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                      female_loader=valid_female_loader, model=model, device=device)
-    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                              female_loader=valid_female_loader,
-                                              global_model=model,
-                                              male_model=model_male,
-                                              female_model=model_female,
-                                              num_male=len(df_val_mal),
-                                              num_female=len(df_val_fem),
-                                              device=device)
+                               model=global_model, device=device)
     history['best_test'] = test_acc
     history['best_demo_parity'] = demo_p
-    history['best_equal_odd'] = equal_odd
-    history['best_disp_imp'] = max(male_norm, female_norm)
+    history['best_epoch'] = es.best_epoch
     print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
@@ -1613,18 +1589,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
 
 
 def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
         drop=True)
     df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
@@ -1745,7 +1711,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
     args.n_batch = len(train_male_loader)
     args.bs_male = int(args.sampling_rate * len(train_male_dataset))
     args.bs_female = int(args.sampling_rate * len(train_female_dataset))
-    print(len(train_male_dataset), len(train_female_dataset), args.n_batch)
+    print(len(train_male_dataset), len(train_female_dataset), args.n_batch, args.bs_male + args.bs_female)
+    print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
     model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
@@ -1787,8 +1754,11 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
         'test_history_loss': [],
         'test_history_acc': [],
         'disp_imp': [],
+        'demo_parity': [],
         'best_test': 0,
         'best_disp_imp': 0,
+        'best_demo_parity': 0,
+        'best_epoch': 0,
         'male_norm': [],
         'female_norm': [],
     }
@@ -1834,14 +1804,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
         valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
         test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
 
-        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                                  female_loader=valid_female_loader,
-                                                  global_model=global_model,
-                                                  male_model=model_male,
-                                                  female_model=model_female,
-                                                  num_male=len(df_val_mal),
-                                                  num_female=len(df_val_fem),
-                                                  device=device)
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                                   model=global_model, device=device)
 
         acc_male_score = accuracy_score(targets_male, np.round(np.array(outputs_male)))
         acc_female_score = accuracy_score(targets_female, np.round(np.array(outputs_female)))
@@ -1861,8 +1825,9 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
         history['train_history_acc'].append(train_acc)
         history['val_history_loss'].append(valid_loss)
         history['val_history_acc'].append(val_acc)
-        history['male_norm'].append(male_norm)
-        history['female_norm'].append(female_norm)
+        history['demo_parity'].append(demo_p)
+        # history['male_norm'].append(male_norm)
+        # history['female_norm'].append(female_norm)
 
         es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=args.save_path + model_name)
         es_male(epoch=epoch, epoch_score=acc_male_score, model=model_male,
@@ -1875,16 +1840,11 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
     model_female.load_state_dict(torch.load(args.save_path + 'female_{}'.format(model_name)))
     test_loss, test_outputs, test_targets = eval_fn(test_loader, global_model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
-    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                              female_loader=valid_female_loader,
-                                              global_model=global_model,
-                                              male_model=model_male,
-                                              female_model=model_female,
-                                              num_male=len(df_val_mal),
-                                              num_female=len(df_val_fem),
-                                              device=device)
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                               model=global_model, device=device)
     history['best_test'] = test_acc
-    history['best_disp_imp'] = max(male_norm, female_norm)
+    history['best_demo_parity'] = demo_p
+    history['best_epoch'] = es.best_epoch
     print_history_proposed(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 

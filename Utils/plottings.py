@@ -351,16 +351,20 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['train_history_acc'],
         '-o',
-        label='Train ACC',
-        color='#ff7f0e'
+        label='Train',
     )
 
     axs[0].plot(
         np.arange(num_epochs),
         history['val_history_acc'],
         '--o',
-        label='Val ACC',
-        color='#1f77b4'
+        label='Val',
+    )
+    axs[0].plot(
+        np.arange(num_epochs),
+        history['test_history_acc'],
+        '-.*',
+        label='Test',
     )
 
     # axs[0].plot(
@@ -370,21 +374,6 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
     #     label='Test ACC',
     #     color='deeppink'
     # )
-
-    x = np.argmax(history['val_history_acc'])
-    y = np.max(history['val_history_acc'])
-
-    xdist = axs[0].get_xlim()[1] - axs[0].get_xlim()[0]
-    ydist = axs[0].get_ylim()[1] - axs[0].get_ylim()[0]
-
-    axs[0].scatter(x, y, s=200, color='#1f77b4')
-
-    axs[0].text(
-        x - 0.03 * xdist,
-        y - 0.13 * ydist,
-        'max acc\n%.2f' % y,
-        size=14
-    )
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
@@ -397,8 +386,7 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
         np.arange(num_epochs),
         history['train_history_loss'],
         '-o',
-        label='Train Loss',
-        color='#2ca02c'
+        label='Train'
     )
 
     # axs[1].plot(
@@ -411,25 +399,16 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
 
     axs[1].plot(
         np.arange(num_epochs),
-        history['test_history_loss'],
-        ':*',
-        label='Val Loss',
-        color='#d62728'
+        history['val_history_loss'],
+        '--o',
+        label='Val'
     )
 
-    x = np.argmin(history['val_history_loss'])
-    y = np.min(history['val_history_loss'])
-
-    xdist = axs[1].get_xlim()[1] - axs[1].get_xlim()[0]
-    ydist = axs[1].get_ylim()[1] - axs[1].get_ylim()[0]
-
-    axs[1].scatter(x, y, s=200, color='#d62728')
-
-    axs[1].text(
-        x - 0.03 * xdist,
-        y + 0.05 * ydist,
-        'min loss',
-        size=14
+    axs[1].plot(
+        np.arange(num_epochs),
+        history['test_history_loss'],
+        '-.*',
+        label='Test'
     )
 
     axs[1].set_ylabel('Loss', size=14)
@@ -459,14 +438,10 @@ def print_history_track_grad(fold, history, num_epochs, args, current_time):
     # )
     # ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
 
-    axs[2].plot(np.arange(num_epochs), history['male_norm'], '-*', label='male')
-    axs[2].plot(np.arange(num_epochs), history['female_norm'],'-o', label='female')
-    axs[2].fill_between(np.arange(num_epochs), np.array(history['male_norm']) - np.array(history['male_std']),
-                        np.array(history['male_norm']) + np.array(history['male_std']), alpha=0.2)
-    axs[2].fill_between(np.arange(num_epochs), np.array(history['female_norm']) - np.array(history['female_std']),
-                        np.array(history['female_norm']) + np.array(history['female_std']), alpha=0.2)
+    axs[2].plot(np.arange(num_epochs), history['demo_parity'], '--*', label='Empirical result')
+    axs[2].plot(np.arange(num_epochs), history['empi_bound'],'-o', label='Empirical bound')
     axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_ylabel('Norm of Gradient', size=14)
+    axs[2].set_ylabel('Demographic Parity', size=14)
     axs[2].legend()
     plt.savefig(save_name)
 
@@ -659,27 +634,26 @@ def print_history_proposed(fold, history, num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        history['male_norm'],
+        history['demo_parity'],
         '-.o',
-        label='Male'
     )
 
-    axs[2].plot(
-        np.arange(num_epochs),
-        history['female_norm'],
-        '--*',
-        label='Female'
-    )
+    # axs[2].plot(
+    #     np.arange(num_epochs),
+    #     history['female_norm'],
+    #     '--*',
+    #     label='Female'
+    # )
 
-    bnd = bound(args=args)
+    bnd = bound_kl(args=args, num_ep=num_epochs)
     axs[2].plot(
         np.arange(num_epochs),
-        np.ones(num_epochs)*bnd,
+        bnd,
         '-^',
         label='Theoretical Bound'
     )
 
-    axs[2].set_ylabel(r'$L_1$-norm', size=14)
+    axs[2].set_ylabel(r'$Demographic Parity', size=14)
     axs[2].set_xlabel('Epochs', size=14)
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
     plt.savefig(save_name)

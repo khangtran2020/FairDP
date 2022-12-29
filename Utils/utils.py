@@ -110,3 +110,16 @@ def get_name(args, current_date, fold):
                                                                             current_date.hour,
                                                                             current_date.minute,
                                                                             current_date.second)
+
+def bound_kl(args, num_ep):
+    M = (args.bs_male + args.bs_female)/(args.clip*(args.ns**2))
+    epochs = np.arange(num_ep)
+    return np.sqrt(1 - np.exp(-1*(M*epochs)))
+
+def get_Mt(args, norm_grad):
+    M = norm_grad / (args.clip**2 * (args.ns ** 2))
+    return M
+
+def bound_kl_emp(M):
+    return np.sqrt(1 - np.exp(-1*(M)))
+    # pass

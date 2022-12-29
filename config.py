@@ -21,7 +21,7 @@ def add_model_group(group):
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')
     group.add_argument('--batch_size', type=int, default=512, help="batch size for training process")
-    group.add_argument('--sampling_rate', type=int, default=0.08, help="batch size for training process")
+    group.add_argument('--sampling_rate', type=float, default=0.08, help="batch size for training process")
     group.add_argument('--n_hid', type=int, default=32, help='number hidden embedding dim')
     group.add_argument("--alpha", type=float, default=0.2)
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
