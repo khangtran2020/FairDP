@@ -204,7 +204,7 @@ def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, sc
         for p in model.named_parameters():
             total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
             temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
-        print(np.sqrt(total_l2_norm) <= clipping, np.sqrt(total_l2_norm), clipping)
+        print(np.sqrt(total_l2_norm.item()) <= clipping, np.sqrt(total_l2_norm.item()), clipping)
         output = output.cpu().detach().numpy()
         train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
         train_outputs.append(output)
