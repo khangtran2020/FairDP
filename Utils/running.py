@@ -894,14 +894,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, 
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler_male = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_male, mode='max',
-                                                                factor=0.1, patience=15, verbose=True,
-                                                                threshold=0.0001, threshold_mode='rel',
-                                                                cooldown=0, min_lr=0.0005, eps=1e-08)
-    scheduler_female = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_female, mode='max',
-                                                                  factor=0.1, patience=15, verbose=True,
-                                                                  threshold=0.0001, threshold_mode='rel',
-                                                                  cooldown=0, min_lr=0.0005, eps=1e-08)
+    scheduler_male = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_male, T_max=10, eta_min=0)
+    scheduler_female = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_female, T_max=10, eta_min=0)
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
     es_male = EarlyStopping(patience=args.patience, verbose=False)
