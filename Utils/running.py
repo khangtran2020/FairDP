@@ -868,7 +868,7 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 
-def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, current_time):
+def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
     train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
