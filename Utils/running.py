@@ -873,10 +873,7 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, 
     model_name = '{}.pt'.format(name)
     train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
         args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
-    args.n_batch = len(train_male_loader)
-    args.bs_male = int(args.sampling_rate * len(train_male_dataset))
-    args.bs_female = int(args.sampling_rate * len(train_female_dataset))
-    print(len(train_male_dataset), len(train_female_dataset), args.n_batch, args.bs_male + args.bs_female)
+    print(args.n_batch, args.bs_male + args.bs_female)
     print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
