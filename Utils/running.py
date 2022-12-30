@@ -975,8 +975,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, 
         val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
         test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
 
-        scheduler_male.step(acc_male_score)
-        scheduler_female.step(acc_female_score)
+        # scheduler_male.step(acc_male_score)
+        # scheduler_female.step(acc_female_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
                         Valid_ACC_SCORE=val_acc)
