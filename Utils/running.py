@@ -894,11 +894,11 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, 
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+    scheduler_male = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_male, mode='max',
                                                                 factor=0.1, patience=15, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
                                                                 cooldown=0, min_lr=0.0005, eps=1e-08)
-    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+    scheduler_female = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_female, mode='max',
                                                                   factor=0.1, patience=15, verbose=True,
                                                                   threshold=0.0001, threshold_mode='rel',
                                                                   cooldown=0, min_lr=0.0005, eps=1e-08)
@@ -975,8 +975,8 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, train_df, test_df, args, 
         val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
         test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
 
-        # scheduler_male.step(acc_male_score)
-        # scheduler_female.step(acc_female_score)
+        scheduler_male.step(acc_male_score)
+        scheduler_female.step(acc_female_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
                         Valid_ACC_SCORE=val_acc)
