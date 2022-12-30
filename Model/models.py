@@ -31,3 +31,14 @@ class NormNN(nn.Module):
         x4 = self.layer_3(x3)
         x5 = torch.nn.functional.sigmoid(x4)
         return x5
+
+class NormLogit(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(NormLogit, self).__init__()
+        self.layer_1 = nn.Linear(input_dim, output_dim)
+    def forward(self, x):
+        norm = torch.norm(x, dim=-1, keepdim=True).repeat(1, x.size(dim=-1)) + 1e-16
+        x = torch.div(x, norm)
+        x = self.layer_1(x)
+        out = torch.nn.functional.sigmoid(x)
+        return out

@@ -18,68 +18,12 @@ from opacus.accountants import create_accountant
 # from pyvacy import optim, analysis
 
 def run_clean(fold, train_df, test_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
 
-    # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    test_dataset = Data(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        drop_last=True,
-        num_workers=4
-    )
-
-    valid_loader = DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    train_loader, valid_loader, test_loader = init_data(args=args, fold=fold, train_df=train_df, test_df=test_df,
+                                                        male_df=None, female_df=None)
+    model = init_model(args)
     model.to(device)
 
     # DEfining criterion
@@ -89,9 +33,9 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
 
     # Defining LR SCheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=3, verbose=True,
+                                                           factor=0.1, patience=10, verbose=True,
                                                            threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=0, eps=1e-08)
+                                                           cooldown=0, min_lr=5e-4, eps=1e-08)
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
@@ -119,7 +63,7 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
 
-        scheduler.step(acc_score)
+        # scheduler.step(acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
                         Valid_ACC_SCORE=acc_score)
@@ -132,9 +76,9 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
         history['test_history_acc'].append(test_acc)
         es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
 
-        if es.early_stop:
-            print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-            break
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
 
     print_history(fold, history, epoch + 1, args, current_time)
     model.load_state_dict(torch.load(args.save_path + model_name))
@@ -145,71 +89,14 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
 
 
 def run_dpsgd(fold, train_df, test_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
 
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
-    # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    test_dataset = Adult(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler,
-        num_workers=0
-    )
-
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    train_loader, valid_loader, test_loader = init_data(args=args, fold=fold, train_df=train_df, test_df=test_df,
+                                                        male_df=None, female_df=None)
 
     # Defining Model for specific fold
-    model = NeuralNetwork(args.input_dim, args.n_hid, args.output_dim)
+    model = init_model(args)
     model.to(device)
 
     # DEfining criterion
@@ -278,134 +165,15 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
 
 
 def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    test_dataset = Data(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        X=df_train_fem[args.feature].values,
-        y=df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        X=df_val_mal[args.feature].values,
-        y=df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        X=df_val_fem[args.feature].values,
-        y=df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        drop_last=True,
-        num_workers=4
-    )
-
-    valid_loader = DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        pin_memory=True,
-        drop_last=True,
-    )
-
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        pin_memory=True,
-        drop_last=True,
-    )
-
-    valid_male_loader = DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     # Defining Model for specific fold
-    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model = init_model(args=args)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
     model.to(device)
     model_male.to(device)
     model_female.to(device)
@@ -529,140 +297,15 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
 
 
 def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    test_dataset = Data(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        X=df_train_fem[args.feature].values,
-        y=df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        X=df_val_mal[args.feature].values,
-        y=df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        X=df_val_fem[args.feature].values,
-        y=df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler,
-        num_workers=0
-    )
-
-    valid_loader = DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=male_sampler,
-        pin_memory=True,
-        drop_last=True,
-    )
-    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=female_sampler,
-        pin_memory=True,
-        drop_last=True,
-    )
-
-    valid_male_loader = DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     # Defining Model for specific fold
-    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model = init_model(args=args)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
     model.to(device)
     model_male.to(device)
     model_female.to(device)
@@ -789,140 +432,15 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
 
 
 def run_fair_dp(fold, train_df, test_df, male_df, female_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-
-    df_train = train_df[train_df.fold != fold]
-    df_valid = train_df[train_df.fold == fold]
-
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_dataset = Data(
-        X=df_train[args.feature].values,
-        y=df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    test_dataset = Data(
-        X=test_df[args.feature].values,
-        y=test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    valid_dataset = Data(
-        X=df_valid[args.feature].values,
-        y=df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        X=df_train_fem[args.feature].values,
-        y=df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        X=df_val_mal[args.feature].values,
-        y=df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        X=df_val_fem[args.feature].values,
-        y=df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler,
-        num_workers=0
-    )
-
-    valid_loader = DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    male_sampler = torch.utils.data.RandomSampler(train_male_dataset, replacement=True)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=male_sampler,
-        pin_memory=True,
-        drop_last=True,
-    )
-    female_sampler = torch.utils.data.RandomSampler(train_female_dataset, replacement=True)
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        sampler=female_sampler,
-        pin_memory=True,
-        drop_last=True,
-    )
-
-    valid_male_loader = DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=4,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     # Defining Model for specific fold
-    model = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model = init_model(args=args)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
     model.to(device)
     model_male.to(device)
     model_female.to(device)
@@ -1060,122 +578,8 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
 
-    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
-        drop=True)
-    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
-        drop=True)
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    train_dataset = Data(
-        df_train[args.feature].values,
-        df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    valid_dataset = Data(
-        df_valid[args.feature].values,
-        df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    test_dataset = Data(
-        test_df[args.feature].values,
-        test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=int(args.sampling_rate * len(train_male_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_male,
-        num_workers=0
-    )
-
-    sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=int(args.sampling_rate * len(train_female_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_female,
-        num_workers=0
-    )
-
-    valid_male_loader = torch.utils.data.DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = torch.utils.data.DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     args.n_batch = len(train_male_loader)
     args.bs_male = int(args.sampling_rate * len(train_male_dataset))
@@ -1184,9 +588,9 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    global_model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
+    global_model = init_model(args=args)
 
     model_male.to(device)
     model_female.to(device)
@@ -1234,26 +638,27 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         model_female.load_state_dict(global_dict)
 
         _, _, _, male_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_male_loader,
-                                           model=model_male,
-                                           criterion=criterion,
-                                           optimizer=optimizer_male,
-                                           device=device,
-                                           scheduler=None,
-                                           clipping=args.clip,
-                                           noise_scale=args.ns)
+                                                                model=model_male,
+                                                                criterion=criterion,
+                                                                optimizer=optimizer_male,
+                                                                device=device,
+                                                                scheduler=None,
+                                                                clipping=args.clip,
+                                                                noise_scale=args.ns)
 
         _, _, _, female_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_female_loader,
-                                           model=model_female,
-                                           criterion=criterion,
-                                           optimizer=optimizer_female,
-                                           device=device,
-                                           scheduler=None,
-                                           clipping=args.clip,
-                                           noise_scale=args.ns)
+                                                                  model=model_female,
+                                                                  criterion=criterion,
+                                                                  optimizer=optimizer_female,
+                                                                  device=device,
+                                                                  scheduler=None,
+                                                                  clipping=args.clip,
+                                                                  noise_scale=args.ns)
 
         grad_norm = 0
         for p in global_model.named_parameters():
             grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
+        # print(grad_norm.item())
         M_t = get_Mt(args=args, norm_grad=grad_norm.item())
         M += M_t
         male_dict = model_male.state_dict()
@@ -1293,7 +698,6 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         history['demo_parity'].append(demo_p)
         history['empi_bound'].append(bound_kl_emp(M))
 
-
         es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=args.save_path + model_name)
         #
         # if es.early_stop:
@@ -1312,134 +716,10 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
 
 
 def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current_time):
-    model_name = '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}.pt'.format(args.dataset,
-                                                                                 args.mode, fold,
-                                                                                 args.ns,
-                                                                                 args.clip,
-                                                                                 args.epochs,
-                                                                                 current_time.day,
-                                                                                 current_time.month,
-                                                                                 current_time.year,
-                                                                                 current_time.hour,
-                                                                                 current_time.minute,
-                                                                                 current_time.second)
-
-    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
-        drop=True)
-    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
-        drop=True)
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    train_dataset = Data(
-        df_train[args.feature].values,
-        df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    valid_dataset = Data(
-        df_valid[args.feature].values,
-        df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    test_dataset = Data(
-        test_df[args.feature].values,
-        test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=int(args.sampling_rate * len(train_male_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_male,
-        num_workers=0
-    )
-
-    sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=int(args.sampling_rate * len(train_female_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_female,
-        num_workers=0
-    )
-
-    valid_male_loader = torch.utils.data.DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = torch.utils.data.DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     args.n_batch = len(train_male_loader)
     args.bs_male = int(args.sampling_rate * len(train_male_dataset))
@@ -1447,9 +727,9 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
     print(len(train_male_dataset), len(train_female_dataset), args.n_batch)
 
     # Defining Model for specific fold
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    global_model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
+    global_model = init_model(args=args)
 
     model_male.to(device)
     model_female.to(device)
@@ -1591,123 +871,8 @@ def run_fair_dpsgd_alg2(fold, male_df, female_df, test_df, args, device, current
 def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
-    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
-        drop=True)
-    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
-        drop=True)
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # Defining DataSet
-    train_male_dataset = Data(
-        X=df_train_mal[args.feature].values,
-        y=df_train_mal[args.target].values,
-        ismale=df_train_mal[args.z].values
-    )
-
-    train_female_dataset = Data(
-        df_train_fem[args.feature].values,
-        df_train_fem[args.target].values,
-        ismale=df_train_fem[args.z].values
-    )
-
-    valid_male_dataset = Data(
-        df_val_mal[args.feature].values,
-        df_val_mal[args.target].values,
-        ismale=df_val_mal[args.z].values
-    )
-
-    valid_female_dataset = Data(
-        df_val_fem[args.feature].values,
-        df_val_fem[args.target].values,
-        ismale=df_val_fem[args.z].values
-    )
-
-    train_dataset = Data(
-        df_train[args.feature].values,
-        df_train[args.target].values,
-        ismale=df_train[args.z].values
-    )
-
-    valid_dataset = Data(
-        df_valid[args.feature].values,
-        df_valid[args.target].values,
-        ismale=df_valid[args.z].values
-    )
-
-    test_dataset = Data(
-        test_df[args.feature].values,
-        test_df[args.target].values,
-        ismale=test_df[args.z].values
-    )
-
-    # Defining DataLoader with BalanceClass Sampler
-    sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
-    train_male_loader = DataLoader(
-        train_male_dataset,
-        batch_size=int(args.sampling_rate * len(train_male_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_male,
-        num_workers=0
-    )
-
-    sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
-    train_female_loader = DataLoader(
-        train_female_dataset,
-        batch_size=int(args.sampling_rate * len(train_female_dataset)),
-        pin_memory=True,
-        drop_last=True,
-        sampler=sampler_female,
-        num_workers=0
-    )
-
-    valid_male_loader = torch.utils.data.DataLoader(
-        valid_male_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_female_loader = torch.utils.data.DataLoader(
-        valid_female_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        num_workers=0,
-        shuffle=False,
-        pin_memory=True,
-        drop_last=False,
-    )
-
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
     args.n_batch = len(train_male_loader)
     args.bs_male = int(args.sampling_rate * len(train_male_dataset))
     args.bs_female = int(args.sampling_rate * len(train_female_dataset))
@@ -1715,9 +880,9 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
     print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
-    model_male = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    model_female = NormNN(args.input_dim, args.n_hid, args.output_dim)
-    global_model = NormNN(args.input_dim, args.n_hid, args.output_dim)
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
+    global_model = init_model(args=args)
 
     model_male.to(device)
     model_female.to(device)
@@ -1733,11 +898,11 @@ def run_fair_dpsgd_one_batch(fold, male_df, female_df, test_df, args, device, cu
 
     # Defining LR SCheduler
     scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
-                                                                factor=0.1, patience=3, verbose=True,
+                                                                factor=0.1, patience=15, verbose=True,
                                                                 threshold=0.0001, threshold_mode='rel',
                                                                 cooldown=0, min_lr=0.0005, eps=1e-08)
     scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
-                                                                  factor=0.1, patience=3, verbose=True,
+                                                                  factor=0.1, patience=15, verbose=True,
                                                                   threshold=0.0001, threshold_mode='rel',
                                                                   cooldown=0, min_lr=0.0005, eps=1e-08)
     # DEfining Early Stopping Object
@@ -1853,50 +1018,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                  current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
-
-    df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
-        drop=True)
-    df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
-        drop=True)
-    df_train_mal = male_df[male_df.fold != fold]
-    df_train_fem = female_df[female_df.fold != fold]
-    df_val_mal = male_df[male_df.fold == fold]
-    df_val_fem = female_df[female_df.fold == fold]
-
-    # female
-    X_fem = df_train_fem[args.feature].values
-    y_fem = df_train_fem[args.target].values.reshape(-1, 1)
-    X_fem = X_fem / np.linalg.norm(X_fem, ord=2, axis=1).reshape(-1, 1)
-
-    # male
-    X_mal = df_train_mal[args.feature].values
-    y_mal = df_train_mal[args.target].values.reshape(-1, 1)
-    X_mal = X_mal / np.linalg.norm(X_mal, ord=2, axis=1).reshape(-1, 1)
-
-    # train
-    X_train = df_train[args.feature].values
-    y_train = df_train[args.target].values.reshape(-1, 1)
-    X_train = X_train / np.linalg.norm(X_train, ord=2, axis=1).reshape(-1, 1)
-
-    # valid
-    X_mal_val = df_val_mal[args.feature].values
-    y_mal_val = df_val_mal[args.target].values.reshape(-1, 1)
-    X_mal_val = X_mal_val / np.linalg.norm(X_mal_val, ord=2, axis=1).reshape(-1, 1)
-
-    X_fem_val = df_val_fem[args.feature].values
-    y_fem_val = df_val_fem[args.target].values.reshape(-1, 1)
-    X_fem_val = X_fem_val / np.linalg.norm(X_fem_val, ord=2, axis=1).reshape(-1, 1)
-
-    X_valid = df_valid[args.feature].values
-    y_valid = df_valid[args.target].values.reshape(-1, 1)
-    X_valid = X_valid / np.linalg.norm(X_valid, ord=2, axis=1).reshape(-1, 1)
-
-    # test
-
-    X_test = test_df[args.feature].values
-    y_test = test_df[args.target].values.reshape(-1, 1)
-    X_test = X_test / np.linalg.norm(X_test, ord=2, axis=1).reshape(-1, 1)
-
+    X_train, X_valid, X_test, X_mal, X_fem, X_mal_val, X_fem_val, y_train, y_valid, y_test, y_mal, y_fem, y_mal_val, y_fem_val = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
     if args.submode == 'func' or args.submode == 'fairdp':
         f_coff_0, f_coff_1, f_coff_2, Q_f = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
                                                             mode=args.submode)
@@ -2018,8 +1141,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
-        print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}, loss on male {}, female {}".format(epoch, train_loss, train_acc,
-                                                                                          valid_loss, valid_acc, loss_mal, loss_fem))
+        print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}, loss on male {}, female {}".format(
+            epoch, train_loss, train_acc,
+            valid_loss, valid_acc, loss_mal, loss_fem))
         # print('Epoch {}: Loss on male {}, female {}'.format(epoch, loss_mal, loss_fem))
         # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
         #                 Valid_ACC_SCORE=valid_acc)
