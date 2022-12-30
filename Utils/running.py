@@ -651,7 +651,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
                                                                   scheduler=None,
                                                                   clipping=args.clip,
                                                                   noise_scale=args.ns)
-        norm_female = 0
+        grad_norm = 0
         for p in global_model.named_parameters():
             grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
         # print(np.sqrt(norm_male.item()) < args.clipping, grad_norm.item())
