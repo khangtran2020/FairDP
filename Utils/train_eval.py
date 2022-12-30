@@ -206,7 +206,7 @@ def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, sc
             temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
         if not np.sqrt(total_l2_norm.item()) <= clipping:
             print(np.sqrt(total_l2_norm.item()) <= clipping, np.sqrt(total_l2_norm.item()), clipping)
-            break
+            # break
         output = output.cpu().detach().numpy()
         train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
         train_outputs.append(output)
