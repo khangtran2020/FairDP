@@ -20,6 +20,8 @@ def add_data_group(group):
 def add_model_group(group):
     group.add_argument("--model_type", type=str, default='NormNN', help="Model type")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
+    group.add_argument("--max_lr", type=float, default=0.1, help="max learning rate")
+    group.add_argument("--min_lr", type=float, default=0.052, help="min learning rate")
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')
     group.add_argument('--batch_size', type=int, default=512, help="batch size for training process")
     group.add_argument('--sampling_rate', type=float, default=0.08, help="batch size for training process")
