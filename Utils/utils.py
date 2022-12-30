@@ -122,7 +122,7 @@ def get_name(args, current_date, fold):
 
 
 def bound_kl(args, num_ep):
-    M = (args.bs_male + args.bs_female) / (args.clip * (args.ns ** 2))
+    M = (args.bs_male + args.bs_female) / (args.ns ** 2)
     epochs = np.arange(num_ep)
     return np.sqrt(1 - np.exp(-1 * (M * epochs)))
 
