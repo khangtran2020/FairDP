@@ -96,10 +96,9 @@ def icml_bound(args, d):
 
 def get_name(args, current_date, fold):
     if args.mode != 'func':
-        return '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+        return '{}_{}_fold_{}_submode_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
                                                                             args.mode, fold,
-                                                                            args.ns,
-                                                                            args.clip,
+                                                                            args.submode,
                                                                             args.epochs,
                                                                             current_date.day,
                                                                             current_date.month,
