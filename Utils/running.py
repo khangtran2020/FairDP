@@ -105,10 +105,10 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=3, verbose=True,
-                                                           threshold=0.0005, threshold_mode='rel',
-                                                           cooldown=0, min_lr=0.0005, eps=1e-08)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=3, verbose=True,
+    #                                                        threshold=0.0005, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=0.0005, eps=1e-08)
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
@@ -139,7 +139,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
 
-        scheduler.step(acc_score)
+        # scheduler.step(acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
                         Valid_ACC_SCORE=acc_score)
