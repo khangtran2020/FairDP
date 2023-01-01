@@ -150,8 +150,8 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
         history['val_history_acc'].append(acc_score)
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
-
+        # es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+        torch.save(model.state_dict(), args.save_path + model_name)
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
@@ -694,7 +694,9 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         history['demo_parity'].append(demo_p)
         history['empi_bound'].append(bound_kl_emp(M))
 
-        es(epoch=epoch, epoch_score=val_acc, model=global_model, model_path=args.save_path + model_name)
+        torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
+        torch.save(global_model.state_dict(), args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
