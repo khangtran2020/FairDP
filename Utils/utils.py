@@ -96,9 +96,10 @@ def icml_bound(args, d):
 
 def get_name(args, current_date, fold):
     if args.mode != 'func':
-        return '{}_{}_fold_{}_submode_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+        return '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
                                                                             args.mode, fold,
-                                                                            args.submode,
+                                                                            args.ns,
+                                                                            args.clip,
                                                                             args.epochs,
                                                                             current_date.day,
                                                                             current_date.month,
@@ -107,17 +108,17 @@ def get_name(args, current_date, fold):
                                                                             current_date.minute,
                                                                             current_date.second)
     else:
-        return '{}_{}_fold_{}_eps_{}_C_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
-                                                                          args.mode, fold,
-                                                                          args.tar_eps,
-                                                                          args.clip,
-                                                                          args.epochs,
-                                                                          current_date.day,
-                                                                          current_date.month,
-                                                                          current_date.year,
-                                                                          current_date.hour,
-                                                                          current_date.minute,
-                                                                          current_date.second)
+        return '{}_{}_fold_{}_submode_{}_eps_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
+                                                                         args.mode, fold,
+                                                                         args.submode,
+                                                                         args.tar_eps,
+                                                                         args.epochs,
+                                                                         current_date.day,
+                                                                         current_date.month,
+                                                                         current_date.year,
+                                                                         current_date.hour,
+                                                                         current_date.minute,
+                                                                         current_date.second)
 
 
 def bound_kl(args, num_ep):
