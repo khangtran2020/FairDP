@@ -582,7 +582,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
 
     print(args.n_batch, args.bs_male + args.bs_female)
-    # print(bound_kl(args=args, num_ep=args.epochs))
+    print(bound_kl(args=args, num_ep=args.epochs))
 
     # Defining Model for specific fold
     model_male = init_model(args=args)
