@@ -399,6 +399,13 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
             model-model_, p=2)
         model.retain_grad()
         loss.backward()
+    elif args.submode == 'func_org':
+        coff_0, coff_1, coff_2 = coff
+        Q = torch.from_numpy(Q)
+        loss = coff_0 + torch.mm(torch.mm(Q, model).T, coff_1) + torch.mm(
+            torch.mm(torch.mm(Q, model).T.float(), coff_2.float()), torch.mm(Q, model))
+        model.retain_grad()
+        loss.backward()
     elif args.submode == 'fair':
         coff_0, coff_1, coff_2 = coff
         # print(model.requires_grad)
