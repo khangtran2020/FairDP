@@ -421,7 +421,7 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
 
 
 def fair_evaluate(args, model, noise, X, y, fair=False):
-    if args.submode == 'func' or args.submode == 'torch':
+    if args.submode == 'func' or args.submode == 'torch' or args.submode == 'func_org':
         pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
         loss = logloss(y=y, pred=pred.detach().numpy())
         acc = accuracy_score(y_true=y, y_pred=np.round(pred.detach().numpy()))
