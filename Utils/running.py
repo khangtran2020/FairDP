@@ -1014,6 +1014,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                             mode=args.submode)
         m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
                                                             mode=args.submode)
+    elif args.submode == 'func_org':
+        coff_0, coff_1, coff_2, Q = get_coefficient(X=X_train, y=y_train, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
     else:
         f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)

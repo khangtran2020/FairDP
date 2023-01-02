@@ -77,7 +77,7 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     elif mode == 'torch' or mode == 'fair':
         return coff_0, (1 / num_data_point) * torch.from_numpy(coff_1.reshape(-1, 1)), (
                 1 / num_data_point) * torch.from_numpy(coff_2)
-    elif mode == 'func' or mode == 'fairdp':
+    elif mode == 'func' or mode == 'fairdp' or mode == 'func_org':
         coff_1 = coff_1 + noise_1
         coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T # + lbda * np.identity(num_feat)
         w, V = np.linalg.eig(coff_2)
