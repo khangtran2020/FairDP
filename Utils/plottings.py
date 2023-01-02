@@ -449,7 +449,10 @@ def print_history_func(fold, history, num_epochs, args, current_time):
     # plt.figure(figsize=(15,5))
     name = get_name(args=args, current_date=current_time, fold=fold)
     save_name = args.plot_path + '{}.jpg'.format(name)
-    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+    if args.submode != 'func_org':
+        fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+    else:
+        fig, axs = plt.subplots(1, 2, figsize=(12, 5))
 
     axs[0].plot(
         np.arange(num_epochs),
@@ -467,29 +470,6 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         color='#1f77b4'
     )
 
-    # axs[0].plot(
-    #     np.arange(num_epochs),
-    #     history['test_history_acc'],
-    #     ':*',
-    #     label='Test ACC',
-    #     color='deeppink'
-    # )
-
-    # x = np.argmax(history['val_history_acc'])
-    # y = np.max(history['val_history_acc'])
-
-    # xdist = axs[0].get_xlim()[1] - axs[0].get_xlim()[0]
-    # ydist = axs[0].get_ylim()[1] - axs[0].get_ylim()[0]
-
-    # axs[0].scatter(x, y, s=200, color='#1f77b4')
-    #
-    # axs[0].text(
-    #     x - 0.03 * xdist,
-    #     y - 0.13 * ydist,
-    #     'max acc\n%.2f' % y,
-    #     size=14
-    # )
-
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
     axs[0].set_title(f'FOLD {fold + 1}', size=18)
@@ -505,14 +485,6 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         color='#2ca02c'
     )
 
-    # axs[1].plot(
-    #     np.arange(num_epochs),
-    #     history['val_history_loss'],
-    #     '--o',
-    #     label='Test Loss',
-    #     color='deeppink'
-    # )
-
     axs[1].plot(
         np.arange(num_epochs),
         history['test_history_loss'],
@@ -521,44 +493,30 @@ def print_history_func(fold, history, num_epochs, args, current_time):
         color='#d62728'
     )
 
-    # x = np.argmin(history['val_history_loss'])
-    # y = np.min(history['val_history_loss'])
-    #
-    # xdist = axs[1].get_xlim()[1] - axs[1].get_xlim()[0]
-    # ydist = axs[1].get_ylim()[1] - axs[1].get_ylim()[0]
-
-    # axs[1].scatter(x, y, s=200, color='#d62728')
-    #
-    # axs[1].text(
-    #     x - 0.03 * xdist,
-    #     y + 0.05 * ydist,
-    #     'min loss',
-    #     size=14
-    # )
-
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
     axs[1].set_title(f'FOLD {fold + 1}', size=18)
 
     axs[1].legend()
 
-    axs[2].plot(
-        np.arange(num_epochs),
-        history['disp_imp'],
-        '-o',
-        label='Imperical results',
-    )
-    icml_b = icml_bound(args=args, d=history['disp_imp'][-1])
-    axs[2].plot(
-        np.arange(num_epochs),
-        np.ones(num_epochs)*icml_b,
-        '-*',
-        label='ICML bound',
-    )
-    axs[2].legend()
-    axs[2].set_ylabel(r'$L_1$-norm', color="blue", size=14)
-    axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}', size=18)
+    if args.submode != 'func_org':
+        axs[2].plot(
+            np.arange(num_epochs),
+            history['disp_imp'],
+            '-o',
+            label='Imperical results',
+        )
+        icml_b = icml_bound(args=args, d=history['disp_imp'][-1])
+        axs[2].plot(
+            np.arange(num_epochs),
+            np.ones(num_epochs)*icml_b,
+            '-*',
+            label='ICML bound',
+        )
+        axs[2].legend()
+        axs[2].set_ylabel(r'$L_1$-norm', color="blue", size=14)
+        axs[2].set_xlabel('Epochs', size=14)
+        axs[2].set_title(f'FOLD {fold + 1}', size=18)
     plt.savefig(save_name)
 
 

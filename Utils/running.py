@@ -1182,8 +1182,6 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
-    print_history_func(fold, history, epoch + 1, args, current_time)
-    save_res(fold=fold, args=args, dct=history, current_time=current_time)
     global_model = torch.load(args.save_path + model_name)
     if args.submode == 'func' or args.submode == 'torch':
         train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
@@ -1211,6 +1209,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['best_demo_parity'] = np.abs(male_prob - female_prob)
         history['best_equal_odd'] = np.abs(male_tpr - female_tpr)
         history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
+    print_history_func(fold, history, epoch + 1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 # def run_fair_dpsgd_test(fold, male_df, female_df, test_df, args, device, current_time):
 #     df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
