@@ -174,6 +174,7 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     model = init_model(args=args)
     model_male = init_model(args=args)
     model_female = init_model(args=args)
+
     model.to(device)
     model_male.to(device)
     model_female.to(device)
@@ -185,22 +186,22 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
-    # Defining LR SCheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
-    scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
-                                                                factor=0.1, patience=10, verbose=True,
-                                                                threshold=0.0001, threshold_mode='rel',
-                                                                cooldown=0, min_lr=1e-4, eps=1e-08)
-    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
-                                                                  factor=0.1, patience=10, verbose=True,
-                                                                  threshold=0.0001, threshold_mode='rel',
-                                                                  cooldown=0, min_lr=1e-4, eps=1e-08)
+    # # Defining LR SCheduler
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=10, verbose=True,
+    #                                                        threshold=0.0001, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+    #                                                             factor=0.1, patience=10, verbose=True,
+    #                                                             threshold=0.0001, threshold_mode='rel',
+    #                                                             cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+    #                                                               factor=0.1, patience=10, verbose=True,
+    #                                                               threshold=0.0001, threshold_mode='rel',
+    #                                                               cooldown=0, min_lr=1e-4, eps=1e-08)
 
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    # es = EarlyStopping(patience=args.patience, verbose=False)
 
     # History dictionary to store everything
     history = {
@@ -267,7 +268,11 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         history['disp_imp'].append(max(male_norm, female_norm))
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
-        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+
+        torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
+        torch.save(model.state_dict(), args.save_path + model_name)
+        # es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
