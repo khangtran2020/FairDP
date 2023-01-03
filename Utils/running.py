@@ -252,9 +252,9 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
         female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
 
-        scheduler.step(acc_score)
-        scheduler_male.step(male_acc_score)
-        scheduler_female.step(female_acc_score)
+        # scheduler.step(acc_score)
+        # scheduler_male.step(male_acc_score)
+        # scheduler_female.step(female_acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
                         Valid_ACC_SCORE=acc_score)
@@ -407,9 +407,9 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
         female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
 
-        scheduler.step(acc_score)
-        scheduler_male.step(male_acc_score)
-        scheduler_female.step(female_acc_score)
+        # scheduler.step(acc_score)
+        # scheduler_male.step(male_acc_score)
+        # scheduler_female.step(female_acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
                         Valid_ACC_SCORE=acc_score)
