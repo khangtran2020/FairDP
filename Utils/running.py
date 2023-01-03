@@ -682,7 +682,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
             grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
         print(grad_norm.item()/(args.clip**2))
         M_t = get_Mt(args=args, norm_grad=grad_norm.item())
-        M += M_t
+        M = M_t
         male_dict = model_male.state_dict()
         female_dict = model_female.state_dict()
         for key in global_dict.keys():
