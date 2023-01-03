@@ -278,25 +278,25 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
 
-    model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
-    test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
-    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                               model=model, device=device)
-    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                      female_loader=valid_female_loader, model=model, device=device)
-    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                              female_loader=valid_female_loader,
-                                              global_model=model,
-                                              male_model=model_male,
-                                              female_model=model_female,
-                                              num_male=len(df_val_mal),
-                                              num_female=len(df_val_fem),
-                                              device=device)
-    history['best_test'] = test_acc
-    history['best_demo_parity'] = demo_p
-    history['best_equal_odd'] = equal_odd
-    history['best_disp_imp'] = max(male_norm, female_norm)
+    # model.load_state_dict(torch.load(args.save_path + model_name))
+    # test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+    # test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    # _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+    #                            model=model, device=device)
+    # _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+    #                                   female_loader=valid_female_loader, model=model, device=device)
+    # male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+    #                                           female_loader=valid_female_loader,
+    #                                           global_model=model,
+    #                                           male_model=model_male,
+    #                                           female_model=model_female,
+    #                                           num_male=len(df_val_mal),
+    #                                           num_female=len(df_val_fem),
+    #                                           device=device)
+    # history['best_test'] = test_acc
+    # history['best_demo_parity'] = demo_p
+    # history['best_equal_odd'] = equal_odd
+    # history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
@@ -323,18 +323,18 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=10, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=1e-4, eps=1e-08)
-    scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
-                                                                factor=0.1, patience=10, verbose=True,
-                                                                threshold=0.0001, threshold_mode='rel',
-                                                                cooldown=0, min_lr=1e-4, eps=1e-08)
-    scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
-                                                                  factor=0.1, patience=10, verbose=True,
-                                                                  threshold=0.0001, threshold_mode='rel',
-                                                                  cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=10, verbose=True,
+    #                                                        threshold=0.0001, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+    #                                                             factor=0.1, patience=10, verbose=True,
+    #                                                             threshold=0.0001, threshold_mode='rel',
+    #                                                             cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+    #                                                               factor=0.1, patience=10, verbose=True,
+    #                                                               threshold=0.0001, threshold_mode='rel',
+    #                                                               cooldown=0, min_lr=1e-4, eps=1e-08)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
@@ -408,30 +408,36 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         history['demo_parity'].append(demo_p)
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
-        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+
+        torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
+        torch.save(model.state_dict(), args.save_path + model_name)
+        # es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+
+
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
         #     break
-    model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
-    test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
-    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
-                               model=model, device=device)
-    _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
-                                      female_loader=valid_female_loader, model=model, device=device)
-    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
-                                              female_loader=valid_female_loader,
-                                              global_model=model,
-                                              male_model=model_male,
-                                              female_model=model_female,
-                                              num_male=len(df_val_mal),
-                                              num_female=len(df_val_fem),
-                                              device=device)
-    history['best_test'] = test_acc
-    history['best_demo_parity'] = demo_p
-    history['best_equal_odd'] = equal_odd
-    history['best_disp_imp'] = max(male_norm, female_norm)
+    # model.load_state_dict(torch.load(args.save_path + model_name))
+    # test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
+    # test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    # _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+    #                            model=model, device=device)
+    # _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+    #                                   female_loader=valid_female_loader, model=model, device=device)
+    # male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+    #                                           female_loader=valid_female_loader,
+    #                                           global_model=model,
+    #                                           male_model=model_male,
+    #                                           female_model=model_female,
+    #                                           num_male=len(df_val_mal),
+    #                                           num_female=len(df_val_fem),
+    #                                           device=device)
+    # history['best_test'] = test_acc
+    # history['best_demo_parity'] = demo_p
+    # history['best_equal_odd'] = equal_odd
+    # history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
