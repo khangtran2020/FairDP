@@ -242,8 +242,8 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
                                                   global_model=model,
                                                   male_model=model_male,
                                                   female_model=model_female,
-                                                  num_male=len(df_val_mal),
-                                                  num_female=len(df_val_fem),
+                                                  num_male=args.num_val_male,
+                                                  num_female=args.num_val_female,
                                                   device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
@@ -397,8 +397,8 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
                                                   global_model=model,
                                                   male_model=model_male,
                                                   female_model=model_female,
-                                                  num_male=len(df_val_mal),
-                                                  num_female=len(df_val_fem),
+                                                  num_male=args.num_val_male,
+                                                  num_female=args.num_val_female,
                                                   device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
