@@ -748,6 +748,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                               y=y_mal_val, fair=False)
             _, _, female_pred_f = fair_evaluate(args=args, model=model_fem, noise=None, X=X_fem_val,
                                                 y=y_fem_val, fair=False)
+            print(male_pred.size(), male_pred_m.size(), female_pred.size(), female_pred_f.size())
             male_norm = torch.norm(male_pred - male_pred_m, p=1).item() / male_pred.size(0)
             female_norm = torch.norm(female_pred - female_pred_f, p=1).item() / female_pred.size(0)
 
