@@ -58,6 +58,47 @@ class EarlyStopping:
                 torch.save(model, model_path)
         self.val_score = epoch_score
 
+class ReduceOnPlatau:
+    def __init__(self, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 5e-5):
+        self.patience = args.lr_patience
+        self.counter = 0
+        self.mode = mode
+        self.delta = delta
+        self.verbose = verbose
+        self.args = args
+        self.min_lr = min_lr
+        self.step = args.lr_step
+        self.best_score = None
+        if self.mode == "min":
+            self.val_score = np.Inf
+        else:
+            self.val_score = -np.Inf
+
+    def __call__(self, epoch_score):
+
+        if self.mode == "min":
+            score = -1.0 * epoch_score
+        else:
+            score = np.copy(epoch_score)
+
+        if self.best_score is None:
+            self.best_score = score
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                print('EarlyStopping counter: {} out of {}'.format(self.counter, self.patience))
+
+            if self.counter >= self.patience:
+                if self.args.lr - self.step < self.min_lr:
+                    self.args.lr = self.min_lr
+                else:
+                    self.args.lr -= self.step
+                print("Reduce learning rate to {}".format(self.args.lr))
+                self.counter = 0
+        else:
+            self.best_score = score
+            self.counter = 0
+        return self.args
 
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
@@ -93,7 +134,6 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
     return train_loss, train_outputs, train_targets
 
-
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []
@@ -119,7 +159,6 @@ def eval_fn(data_loader, model, criterion, device):
             fin_outputs.extend(outputs)
 
     return loss, fin_outputs, fin_targets
-
 
 def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
@@ -170,7 +209,6 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
         scheduler.step()
 
     return train_loss / num_data_point, train_outputs, train_targets
-
 
 def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
@@ -274,7 +312,6 @@ def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer,
 
     return train_loss / num_data_point, train_outputs, train_targets, temp_par
 
-
 def train_fn_track_grad(dataloader, dataloader_, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
     model.train()
@@ -374,7 +411,6 @@ def train_fn_track_grad(dataloader, dataloader_, model, criterion, optimizer, de
 
     return train_loss / num_data_point, train_outputs, train_targets, grad_norm
 
-
 def update_one_step(args, model, model_, coff, Q, Q_, noise):
     if args.submode == 'func':
         coff_0, coff_1, coff_2 = coff
@@ -418,7 +454,6 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
         loss.backward()
     # print(model.grad)
     return loss.item()
-
 
 def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch' or args.submode == 'func_org':
@@ -478,44 +513,3 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
         male_tpr, female_tpr), (male_prob, female_prob), norm
 
-class ReduceOnPlatau:
-    def __init__(self, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 5e-5):
-        self.patience = args.lr_patience
-        self.counter = 0
-        self.mode = mode
-        self.delta = delta
-        self.verbose = verbose
-        self.args = args
-        self.min_lr = min_lr
-        self.step = args.lr_step
-        self.best_score = None
-        if self.mode == "min":
-            self.val_score = np.Inf
-        else:
-            self.val_score = -np.Inf
-
-    def __call__(self, epoch_score):
-
-        if self.mode == "min":
-            score = -1.0 * epoch_score
-        else:
-            score = np.copy(epoch_score)
-
-        if self.best_score is None:
-            self.best_score = score
-        elif score < self.best_score + self.delta:
-            self.counter += 1
-            if self.verbose:
-                print('EarlyStopping counter: {} out of {}'.format(self.counter, self.patience))
-
-            if self.counter >= self.patience:
-                if self.args.lr - self.step < self.min_lr:
-                    self.args.lr = self.min_lr
-                else:
-                    self.args.lr -= self.step
-                print("Reduce learning rate to {}".format(self.args.lr))
-                self.counter = 0
-        else:
-            self.best_score = score
-            self.counter = 0
-        return self.args

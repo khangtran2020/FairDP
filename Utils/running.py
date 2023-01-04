@@ -87,7 +87,6 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
     history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
-
 def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
@@ -162,7 +161,6 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     history['best_test'] = test_acc
     print_history(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
 
 def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
@@ -299,7 +297,6 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     # history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
 
 def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
