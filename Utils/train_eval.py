@@ -433,3 +433,55 @@ def eval_smooth_classifier(data_loader, model, criterion, device, num_draws):
             fin_outputs.extend(outputs)
 
     return loss, fin_outputs, fin_targets
+
+def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
+    model.to(device)
+    model.train()
+    noise_std = get_gaussian_noise(clipping, noise_scale)
+    train_targets = []
+    train_outputs = []
+    train_loss = 0
+    num_data_point = 0
+    # for bi, d in enumerate(dataloader):
+    features, target, _ = next(iter(dataloader))
+    features = features.to(device, dtype=torch.float)
+    target = target.to(device, dtype=torch.float)
+    optimizer.zero_grad()
+    temp_par = {}
+    for p in model.named_parameters():
+        temp_par[p[0]] = torch.zeros_like(p[1])
+    bz = features.size(dim=0)
+    for i in range(bz):
+        for p in model.named_parameters():
+            p[1].grad = torch.zeros_like(p[1])
+        feat = features[i]
+        targ = target[i]
+        output = model(feat)
+        output = torch.squeeze(output)
+        loss = criterion(output, targ)
+        train_loss += loss.item()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
+        total_l2_norm = 0
+        for p in model.named_parameters():
+            total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
+            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
+        if not np.sqrt(total_l2_norm.item()) <= clipping:
+            print(np.sqrt(total_l2_norm.item()) <= clipping, np.sqrt(total_l2_norm.item()), clipping)
+            # break
+        output = output.cpu().detach().numpy()
+        train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
+        train_outputs.append(output)
+        # model.zero_grad()
+        num_data_point += 1
+
+    for p in model.named_parameters():
+        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(
+            device)
+        p[1].grad = p[1].grad / bz
+    optimizer.step()
+
+    if scheduler is not None:
+        scheduler.step()
+
+    return train_loss / num_data_point, train_outputs, train_targets
