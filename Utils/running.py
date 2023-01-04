@@ -502,8 +502,10 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         'test_history_loss': [],
         'test_history_acc': [],
         'demo_parity': [],
+        'disp': [],
         'best_test': 0,
         'best_demo_parity': 0,
+        'best_disp_imp': 0,
         'best_epoch': 0,
         'empi_bound': []
     }
@@ -555,6 +557,15 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                    model=global_model, device=device)
 
+        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                                  female_loader=valid_female_loader,
+                                                  global_model=global_model,
+                                                  male_model=model_male,
+                                                  female_model=model_female,
+                                                  num_male=args.num_val_male,
+                                                  num_female=args.num_val_female,
+                                                  device=device)
+
         acc_male_score = accuracy_score(targets_male, np.round(np.array(outputs_male)))
         acc_female_score = accuracy_score(targets_female, np.round(np.array(outputs_female)))
         train_acc = accuracy_score(train_target, np.round(np.array(train_output)))
@@ -574,6 +585,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         history['val_history_loss'].append(valid_loss)
         history['val_history_acc'].append(val_acc)
         history['demo_parity'].append(demo_p)
+        history['disp_imp'].append(max(male_norm, female_norm))
         history['empi_bound'].append(bound_kl_emp(M))
 
         torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
@@ -588,8 +600,17 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                model=global_model, device=device)
+    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                              female_loader=valid_female_loader,
+                                              global_model=global_model,
+                                              male_model=model_male,
+                                              female_model=model_female,
+                                              num_male=args.num_val_male,
+                                              num_female=args.num_val_female,
+                                              device=device)
     history['best_test'] = test_acc
     history['best_demo_parity'] = demo_p
+    history['best_disp_imp'] = max(male_norm, female_norm)
     history['best_epoch'] = es.best_epoch
     print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
@@ -816,7 +837,6 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
-
 
 def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
