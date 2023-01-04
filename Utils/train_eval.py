@@ -210,58 +210,6 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
 
     return train_loss / num_data_point, train_outputs, train_targets
 
-def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
-    model.to(device)
-    model.train()
-    noise_std = get_gaussian_noise(clipping, noise_scale)
-    train_targets = []
-    train_outputs = []
-    train_loss = 0
-    num_data_point = 0
-    # for bi, d in enumerate(dataloader):
-    features, target, _ = next(iter(dataloader))
-    features = features.to(device, dtype=torch.float)
-    target = target.to(device, dtype=torch.float)
-    optimizer.zero_grad()
-    temp_par = {}
-    for p in model.named_parameters():
-        temp_par[p[0]] = torch.zeros_like(p[1])
-    bz = features.size(dim=0)
-    for i in range(bz):
-        for p in model.named_parameters():
-            p[1].grad = torch.zeros_like(p[1])
-        feat = features[i]
-        targ = target[i]
-        output = model(feat)
-        output = torch.squeeze(output)
-        loss = criterion(output, targ)
-        train_loss += loss.item()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
-        total_l2_norm = 0
-        for p in model.named_parameters():
-            total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
-            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
-        if not np.sqrt(total_l2_norm.item()) <= clipping:
-            print(np.sqrt(total_l2_norm.item()) <= clipping, np.sqrt(total_l2_norm.item()), clipping)
-            # break
-        output = output.cpu().detach().numpy()
-        train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.append(output)
-        # model.zero_grad()
-        num_data_point += 1
-
-    for p in model.named_parameters():
-        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(
-            device)
-        p[1].grad = p[1].grad / bz
-    optimizer.step()
-
-    if scheduler is not None:
-        scheduler.step()
-
-    return train_loss / num_data_point, train_outputs, train_targets
-
 def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
     model.train()
@@ -311,105 +259,6 @@ def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer,
         scheduler.step()
 
     return train_loss / num_data_point, train_outputs, train_targets, temp_par
-
-def train_fn_track_grad(dataloader, dataloader_, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
-    model.to(device)
-    model.train()
-    noise_std = get_gaussian_noise(clipping, noise_scale)
-    train_targets = []
-    train_outputs = []
-    male_norm = []
-    female_norm = []
-    train_loss = 0
-    num_data_point = 0
-    # for bi, d in enumerate(dataloader):
-    features, target, ismale = next(iter(dataloader))
-    features_, target_, ismale_ = next(iter(dataloader_))
-    features = features.to(device, dtype=torch.float)
-    target = target.to(device, dtype=torch.float)
-    features_ = features_.to(device, dtype=torch.float)
-    target_ = target_.to(device, dtype=torch.float)
-    optimizer.zero_grad()
-    temp_par = {}
-    male_par = {}
-    female_par = {}
-    for p in model.named_parameters():
-        temp_par[p[0]] = torch.zeros_like(p[1])
-        male_par[p[0]] = torch.zeros_like(p[1])
-        female_par[p[0]] = torch.zeros_like(p[1])
-    bz = features.size(dim=0)
-    for i in range(bz):
-        for p in model.named_parameters():
-            p[1].grad = torch.zeros_like(p[1])
-        feat = features[i]
-        targ = target[i]
-        output = model(feat)
-        output = torch.squeeze(output)
-        loss = criterion(output, targ)
-        train_loss += loss.item()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
-        # total_l2_norm = 0
-        for p in model.named_parameters():
-            # total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
-            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
-            male_par[p[0]] = male_par[p[0]] + deepcopy(p[1].grad)
-        # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
-        # if ismale[i].item() == 1:
-        #     male_norm.append(np.sqrt(total_l2_norm.item()))
-        # else:
-        #     female_norm.append(np.sqrt(total_l2_norm.item()))
-        output = output.cpu().detach().numpy()
-        train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.append(output)
-        # model.zero_grad()
-        num_data_point += 1
-
-    bz = features_.size(dim=0)
-    for i in range(bz):
-        for p in model.named_parameters():
-            p[1].grad = torch.zeros_like(p[1])
-        feat = features_[i]
-        targ = target_[i]
-        output = model(feat)
-        output = torch.squeeze(output)
-        loss = criterion(output, targ)
-        train_loss += loss.item()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clipping, norm_type=2)
-        # total_l2_norm = 0
-        for p in model.named_parameters():
-            # total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
-            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
-            female_par[p[0]] = female_par[p[0]] + deepcopy(p[1].grad)
-        # print(np.sqrt(total_l2_norm) <= clipping ,np.sqrt(total_l2_norm), clipping)
-        # if ismale_[i].item() == 1:
-        #     male_norm.append(np.sqrt(total_l2_norm.item()))
-        # else:
-        #     female_norm.append(np.sqrt(total_l2_norm.item()))
-        output = output.cpu().detach().numpy()
-        train_targets.append(targ.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.append(output)
-        # model.zero_grad()
-        num_data_point += 1
-
-    grad_norm = 0
-    for p in model.named_parameters():
-        grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2)**2
-
-    for p in model.named_parameters():
-        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(
-            device)
-        p[1].grad = p[1].grad / num_data_point
-    optimizer.step()
-
-    # male_norm = np.array(male_norm)
-    # female_norm = np.array(female_norm)
-
-    if scheduler is not None:
-        scheduler.step()
-
-    return train_loss / num_data_point, train_outputs, train_targets, grad_norm
 
 def update_one_step(args, model, model_, coff, Q, Q_, noise):
     if args.submode == 'func':
@@ -513,3 +362,73 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
         male_tpr, female_tpr), (male_prob, female_prob), norm
 
+def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, device, scheduler, num_draws):
+    model.to(device)
+    model.train()
+
+    train_targets = []
+    train_outputs = []
+    train_loss = 0
+    params_ = model_.state_dict()
+
+    for bi, d in enumerate(dataloader):
+        features, target, _ = d
+
+        features = features.to(device, dtype=torch.float)
+        target = target.to(device, dtype=torch.float)
+        # num_data_point += features.size(dim=0)
+        optimizer.zero_grad()
+        output = 0.0
+        for i in range(num_draws):
+            for p in model.parameters():
+                p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+            output = output + model(features)
+        output = output/num_draws
+        output = torch.squeeze(output)
+        l2_norm = 0.0
+        for p in model.named_parameters():
+            l2_norm += torch.norm(p[1] - params_[p[0]], p=2)
+        loss = criterion(output, target) + l2_norm
+        train_loss += loss.item()
+        loss.backward()
+        optimizer.step()
+
+        if scheduler is not None:
+            scheduler.step()
+
+        output = output.cpu().detach().numpy()
+
+        train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
+        train_outputs.extend(output)
+
+    return train_loss, train_outputs, train_targets
+
+def eval_smooth_classifier(data_loader, model, criterion, device, num_draws):
+    model.to(device)
+    fin_targets = []
+    fin_outputs = []
+    loss = 0
+    # num_data_point = 0
+    model.eval()
+    with torch.no_grad():
+        for bi, d in enumerate(data_loader):
+            features, target, _ = d
+
+            features = features.to(device, dtype=torch.float)
+            target = target.to(device, dtype=torch.float)
+            # num_data_point += features.size(dim=0)
+            outputs = 0.0
+            for i in range(num_draws):
+                for p in model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                outputs = outputs + model(features)
+            outputs = outputs / num_draws
+            outputs = torch.squeeze(outputs, dim=-1)
+            loss_eval = criterion(outputs, target)
+            loss += loss_eval.item()
+            outputs = outputs.cpu().detach().numpy()
+
+            fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
+            fin_outputs.extend(outputs)
+
+    return loss, fin_outputs, fin_targets

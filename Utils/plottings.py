@@ -131,20 +131,20 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
     #     color='deeppink'
     # )
 
-    x = np.argmax(history['val_history_acc'])
-    y = np.max(history['val_history_acc'])
-
-    xdist = axs[0].get_xlim()[1] - axs[0].get_xlim()[0]
-    ydist = axs[0].get_ylim()[1] - axs[0].get_ylim()[0]
-
-    axs[0].scatter(x, y, s=200, color='#1f77b4')
-
-    axs[0].text(
-        x - 0.03 * xdist,
-        y - 0.13 * ydist,
-        'max acc\n%.2f' % y,
-        size=14
-    )
+    # x = np.argmax(history['val_history_acc'])
+    # y = np.max(history['val_history_acc'])
+    #
+    # xdist = axs[0].get_xlim()[1] - axs[0].get_xlim()[0]
+    # ydist = axs[0].get_ylim()[1] - axs[0].get_ylim()[0]
+    #
+    # # axs[0].scatter(x, y, s=200, color='#1f77b4')
+    # #
+    # # axs[0].text(
+    # #     x - 0.03 * xdist,
+    # #     y - 0.13 * ydist,
+    # #     'max acc\n%.2f' % y,
+    # #     size=14
+    # # )
 
     axs[0].set_ylabel('ACC', size=14)
     axs[0].set_xlabel('Epoch', size=14)
@@ -177,20 +177,20 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
         color='#d62728'
     )
 
-    x = np.argmin(history['val_history_loss'])
-    y = np.min(history['val_history_loss'])
-
-    xdist = axs[1].get_xlim()[1] - axs[1].get_xlim()[0]
-    ydist = axs[1].get_ylim()[1] - axs[1].get_ylim()[0]
-
-    axs[1].scatter(x, y, s=200, color='#d62728')
-
-    axs[1].text(
-        x - 0.03 * xdist,
-        y + 0.05 * ydist,
-        'min loss',
-        size=14
-    )
+    # x = np.argmin(history['val_history_loss'])
+    # y = np.min(history['val_history_loss'])
+    #
+    # xdist = axs[1].get_xlim()[1] - axs[1].get_xlim()[0]
+    # ydist = axs[1].get_ylim()[1] - axs[1].get_ylim()[0]
+    #
+    # axs[1].scatter(x, y, s=200, color='#d62728')
+    #
+    # axs[1].text(
+    #     x - 0.03 * xdist,
+    #     y + 0.05 * ydist,
+    #     'min loss',
+    #     size=14
+    # )
 
     axs[1].set_ylabel('Loss', size=14)
     axs[1].set_xlabel('Epochs', size=14)
@@ -200,24 +200,19 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
 
     axs[2].plot(
         np.arange(num_epochs),
-        history['demo_parity'],
+        history['disp_imp'],
         '-o',
-        label='Demographic Parity',
-        color='blue'
+        label='Imperical Results',
     )
-    axs[2].set_ylabel('Prob/Demographic Parity', color="blue", size=14)
+    axs[2].plot(
+        np.arange(num_epochs),
+        icml_bound(args=args, d=history['norm_model']),
+        '-o',
+        label='ICML bound',
+    )
+    axs[2].set_ylabel(r'$L_1$-norm', size=14)
     axs[2].set_xlabel('Epochs', size=14)
     axs[2].set_title(f'FOLD {fold + 1}', size=18)
-
-    ax2 = axs[2].twinx()
-    ax2.plot(
-        np.arange(num_epochs),
-        history['equal_odd'],
-        '--*',
-        label='Equality of Odds',
-        color='red'
-    )
-    ax2.set_ylabel('TPR/Equality of Odds', color="red", size=14)
     plt.savefig(save_name)
 
 

@@ -87,6 +87,7 @@ def run_clean(fold, train_df, test_df, args, device, current_time):
     history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
@@ -161,6 +162,7 @@ def run_dpsgd(fold, train_df, test_df, args, device, current_time):
     history['best_test'] = test_acc
     print_history(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
 
 def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
@@ -298,6 +300,7 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
@@ -374,13 +377,13 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
                                            clipping=args.clip,
                                            noise_scale=args.ns)
         train_loss, train_out, train_targets = train_fn_dpsgd_one_batch(dataloader=train_loader,
-                                           model=model,
-                                           criterion=criterion,
-                                           optimizer=optimizer,
-                                           device=device,
-                                           scheduler=None,
-                                           clipping=args.clip,
-                                           noise_scale=args.ns)
+                                                                        model=model,
+                                                                        criterion=criterion,
+                                                                        optimizer=optimizer,
+                                                                        device=device,
+                                                                        scheduler=None,
+                                                                        clipping=args.clip,
+                                                                        noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
         _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
         _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
@@ -426,7 +429,6 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         torch.save(model.state_dict(), args.save_path + model_name)
         # es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
 
-
         #
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
@@ -452,6 +454,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
     # history['best_disp_imp'] = max(male_norm, female_norm)
     print_history_fair(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
 
 def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
@@ -533,7 +536,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         grad_norm = 0
         for p in global_model.named_parameters():
             grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
-        print(grad_norm.item()/(args.clip**2))
+        print(grad_norm.item() / (args.clip ** 2))
         M_t = get_Mt(args=args, norm_grad=grad_norm.item())
         M = M_t
         male_dict = model_male.state_dict()
@@ -591,6 +594,7 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
     print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_df, female_df, args, device,
                                                  current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
@@ -604,7 +608,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                             mode=args.submode)
     elif args.submode == 'func_org':
         coff_0, coff_1, coff_2, Q = get_coefficient(X=X_train, y=y_train, epsilon=args.tar_eps, lbda=args.lamda,
-                                                            mode=args.submode)
+                                                    mode=args.submode)
     else:
         f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)
@@ -689,8 +693,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             loss_fem = loss_f
         elif args.submode == 'func_org':
             loss = update_one_step(args=args, model=global_model, model_=None,
-                                     coff=(coff_0, coff_1, coff_2),
-                                     Q=Q, Q_=None, noise=None)
+                                   coff=(coff_0, coff_1, coff_2),
+                                   Q=Q, Q_=None, noise=None)
         elif args.submode == 'torch':
             loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
                                      coff=(m_coff_0, m_coff_1, m_coff_2),
@@ -720,11 +724,11 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                                        X=X_fem_val,
                                                                        y=y_fem_val, fair=True)
             _, _, male_pred_m = fair_evaluate(args=args, model=model_mal, noise=None, X=X_mal_val,
-                                                                 y=y_mal_val, fair=False)
+                                              y=y_mal_val, fair=False)
             _, _, female_pred_f = fair_evaluate(args=args, model=model_fem, noise=None, X=X_fem_val,
-                                                    y=y_fem_val, fair=False)
-            male_norm = torch.norm(male_pred-male_pred_m, p=1).item()/male_pred.size(0)
-            female_norm = torch.norm(female_pred-female_pred_f, p=1).item()/female_pred.size(0)
+                                                y=y_fem_val, fair=False)
+            male_norm = torch.norm(male_pred - male_pred_m, p=1).item() / male_pred.size(0)
+            female_norm = torch.norm(female_pred - female_pred_f, p=1).item() / female_pred.size(0)
 
 
         elif args.submode == 'func_org':
@@ -733,21 +737,19 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
         else:
             acc, loss, _, tpr, prob, norm = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
-                                                    X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
-                                                    y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
+                                                          X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
+                                                          y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
             train_acc, valid_acc, test_acc = acc
             train_loss, valid_loss, test_loss = loss
             male_tpr, female_tpr = tpr
             male_prob, female_prob = prob
             male_norm, female_norm = norm
 
-
         if args.submode == 'func_org':
             global_model.grad = torch.zeros(global_model.size())
         else:
             model_mal.grad = torch.zeros(model_mal.size())
             model_fem.grad = torch.zeros(model_fem.size())
-
 
         print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}, loss on male {}, female {}".format(
             epoch, train_loss, train_acc,
@@ -779,7 +781,6 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             torch.save(model_mal, args.save_path + 'male_{}'.format(model_name))
             torch.save(model_fem, args.save_path + 'female_{}'.format(model_name))
         #
-
 
         # es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
         # args = reduce_lr(epoch_score=valid_acc)
@@ -814,4 +815,116 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         history['best_equal_odd'] = np.abs(male_tpr - female_tpr)
         history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
     print_history_func(fold, history, epoch + 1, args, current_time)
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+
+def run_smooth(fold, train_df, test_df, args, device, current_time):
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
+
+    model_male = init_model(args)
+    model_female = init_model(args)
+    global_model = init_model(args)
+
+    model_male.to(device)
+    model_female.to(device)
+    global_model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
+
+    # Defining LR SCheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+                                                           factor=0.1, patience=20, verbose=True,
+                                                           threshold=0.0001, threshold_mode='rel',
+                                                           cooldown=0, min_lr=5e-4, eps=1e-08)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'disp_imp': [],
+        'norm_model': [],
+        'best_test': 0
+    }
+    global_dict = global_model.state_dict()
+    # THE ENGINE LOOP
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        _, _, _ = train_smooth_classifier(dataloader=train_male_loader, model=model_male, model_=model_female,
+                                          criterion=criterion, optimizer=optimizer_male, device=device,
+                                          scheduler=None, num_draws=args.num_draws)
+        _, _, _ = train_smooth_classifier(dataloader=train_female_loader, model=model_female, model_=model_male,
+                                          criterion=criterion, optimizer=optimizer_female, device=device,
+                                          scheduler=None, num_draws=args.num_draws)
+
+        male_dict = model_male.state_dict()
+        female_dict = model_female.state_dict()
+        for key in global_dict.keys():
+            global_dict[key] = torch.div(deepcopy(male_dict[key]) + deepcopy(female_dict[key]), 2)
+        global_model.load_state_dict(global_dict)
+
+        train_loss, train_outputs, train_targets = eval_smooth_classifier(train_loader, global_model, criterion, device,
+                                                                          num_draws=args.num_draws)
+        val_loss, outputs, targets = eval_smooth_classifier(valid_loader, global_model, criterion, device,
+                                                            num_draws=args.num_draws)
+        test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, global_model, criterion, device,
+                                                                       num_draws=args.num_draws)
+
+        train_acc = accuracy_score(train_targets, np.round(np.array(train_outputs)))
+        test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+        acc_score = accuracy_score(targets, np.round(np.array(outputs)))
+
+        male_norm, female_norm = disperate_impact_smooth(male_loader=valid_male_loader,
+                                                  female_loader=valid_female_loader,
+                                                  global_model=global_model,
+                                                  male_model=model_male,
+                                                  female_model=model_female,
+                                                  num_male=args.num_val_male,
+                                                  num_female=args.num_val_female,
+                                                  device=device)
+        # scheduler.step(acc_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
+                        Valid_ACC_SCORE=acc_score)
+        params_ = model_female.state_dict()
+        l2_norm = 0.0
+        for p in model_male.named_parameters():
+            l2_norm += torch.norm(p[1] - params_[p[0]], p=2)**2
+
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(val_loss)
+        history['val_history_acc'].append(acc_score)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['disp_imp'].append(max(male_norm, female_norm))
+        history['norm_model'].append(np.sqrt(l2_norm.item()))
+
+        torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
+        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
+
+    print_history_fair(fold, history, epoch + 1, args, current_time)
+    global_model.load_state_dict(torch.load(args.save_path + model_name))
+    test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, model, criterion, device)
+    test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

@@ -132,3 +132,77 @@ def disperate_impact(male_loader, female_loader, global_model, male_model, femal
     male_norm = np.sum(np.abs(male_outputs - glob_male_out))
     female_norm = np.sum(np.abs(female_outputs - glob_female_out))
     return male_norm / num_male, female_norm / num_female
+
+def disperate_impact_smooth(male_loader, female_loader, global_model, male_model, female_model, num_male, num_female, device, num_draws):
+    global_model.to(device)
+    male_model.to(device)
+    female_model.to(device)
+
+    glob_male_out = []
+    glob_female_out = []
+    male_outputs = []
+    female_outputs = []
+
+    global_model.eval()
+    male_model.eval()
+    female_model.eval()
+    with torch.no_grad():
+
+        for bi, d in enumerate(male_loader):
+            features, _, _ = d
+
+            features = features.to(device, dtype=torch.float)
+
+            glob_out = 0.0
+            for i in range(num_draws):
+                for p in global_model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                glob_out = glob_out + global_model(features)
+
+            male_out = 0.0
+            for i in range(num_draws):
+                for p in male_model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                male_out = male_out + male_model(features)
+
+            glob_out = torch.squeeze(glob_out, dim=-1)
+            glob_out = glob_out.cpu().detach().numpy()
+            glob_male_out.extend(glob_out)
+
+            male_out = torch.squeeze(male_out, dim=-1)
+            male_out = male_out.cpu().detach().numpy()
+            male_outputs.extend(male_out)
+
+        for bi, d in enumerate(female_loader):
+            features, _, _ = d
+
+            features = features.to(device, dtype=torch.float)
+
+            glob_out = 0.0
+            for i in range(num_draws):
+                for p in global_model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                glob_out = glob_out + global_model(features)
+
+            female_out = 0.0
+            for i in range(num_draws):
+                for p in female_model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                female_out = female_out + female_model(features)
+
+            glob_out = torch.squeeze(glob_out, dim=-1)
+            glob_out = glob_out.cpu().detach().numpy()
+            glob_female_out.extend(glob_out)
+
+            female_out = torch.squeeze(female_out, dim=-1)
+            female_out = female_out.cpu().detach().numpy()
+            female_outputs.extend(female_out)
+
+    male_outputs = np.array(male_outputs)
+    glob_male_out = np.array(glob_male_out)
+    female_outputs = np.array(female_outputs)
+    glob_female_out = np.array(glob_female_out)
+
+    male_norm = np.sum(np.abs(male_outputs - glob_male_out))
+    female_norm = np.sum(np.abs(female_outputs - glob_female_out))
+    return male_norm / num_male, female_norm / num_female

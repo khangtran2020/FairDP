@@ -91,7 +91,7 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
 
 
 def icml_bound(args, d):
-    return d / (np.sqrt(2 * np.pi) * args.ns_)
+    return d / (np.sqrt(2 * np.pi))
 
 
 def get_name(args, current_date, fold):
@@ -293,7 +293,7 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         y_test = test_df[args.target].values.reshape(-1, 1)
         X_test = X_test / np.linalg.norm(X_test, ord=2, axis=1).reshape(-1, 1)
         return X_train, X_valid, X_test, X_mal, X_fem, X_mal_val, X_fem_val, y_train, y_valid, y_test, y_mal, y_fem, y_mal_val, y_fem_val
-    elif args.mode in ['fair', 'fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed']:
+    elif args.mode in ['fair', 'fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed', 'smooth']:
         df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
             drop=True)
         df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(

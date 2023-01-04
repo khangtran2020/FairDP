@@ -93,6 +93,17 @@ def run(args, current_time, device):
                 run_functional_mechanism_logistic_regression(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, train_df=train_df,
                                args=args, device=device,
                                current_time=current_time)
+    elif args.mode == 'smooth':
+        # fold, train_df, test_df, male_df, female_df, args, device, current_time)
+        if args.debug:
+            run_smooth(fold=0, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df, args=args,
+                           device=device,
+                           current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_smooth(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, train_df=train_df,
+                               args=args, device=device,
+                               current_time=current_time)
 
 
 if __name__ == "__main__":
