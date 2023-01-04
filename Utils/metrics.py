@@ -156,13 +156,13 @@ def disperate_impact_smooth(male_loader, female_loader, global_model, male_model
             glob_out = 0.0
             for i in range(num_draws):
                 for p in global_model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
                 glob_out = glob_out + global_model(features)
 
             male_out = 0.0
             for i in range(num_draws):
                 for p in male_model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
                 male_out = male_out + male_model(features)
 
             glob_out = torch.squeeze(glob_out, dim=-1)
@@ -181,13 +181,13 @@ def disperate_impact_smooth(male_loader, female_loader, global_model, male_model
             glob_out = 0.0
             for i in range(num_draws):
                 for p in global_model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
                 glob_out = glob_out + global_model(features)
 
             female_out = 0.0
             for i in range(num_draws):
                 for p in female_model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
                 female_out = female_out + female_model(features)
 
             glob_out = torch.squeeze(glob_out, dim=-1)

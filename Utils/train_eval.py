@@ -382,7 +382,7 @@ def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, dev
         for i in range(num_draws):
             with torch.no_grad():
                 for p in model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
             output = output + model(features)
         output = output/num_draws
         output = torch.squeeze(output)
@@ -421,7 +421,7 @@ def eval_smooth_classifier(data_loader, model, criterion, device, num_draws):
             outputs = 0.0
             for i in range(num_draws):
                 for p in model.parameters():
-                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
                 outputs = outputs + model(features)
             outputs = outputs / num_draws
             outputs = torch.squeeze(outputs, dim=-1)
