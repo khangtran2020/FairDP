@@ -818,7 +818,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
 
-def run_smooth(fold, train_df, test_df, args, device, current_time):
+def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
     train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
@@ -840,10 +840,10 @@ def run_smooth(fold, train_df, test_df, args, device, current_time):
     optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
 
     # Defining LR SCheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
-                                                           factor=0.1, patience=20, verbose=True,
-                                                           threshold=0.0001, threshold_mode='rel',
-                                                           cooldown=0, min_lr=5e-4, eps=1e-08)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
+    #                                                        factor=0.1, patience=20, verbose=True,
+    #                                                        threshold=0.0001, threshold_mode='rel',
+    #                                                        cooldown=0, min_lr=5e-4, eps=1e-08)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
@@ -895,7 +895,7 @@ def run_smooth(fold, train_df, test_df, args, device, current_time):
                                                   female_model=model_female,
                                                   num_male=args.num_val_male,
                                                   num_female=args.num_val_female,
-                                                  device=device)
+                                                  device=device, num_draws=args.num_draws)
         # scheduler.step(acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
@@ -916,7 +916,7 @@ def run_smooth(fold, train_df, test_df, args, device, current_time):
 
         torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
         torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
-        es(epoch=epoch, epoch_score=acc_score, model=model, model_path=args.save_path + model_name)
+        es(epoch=epoch, epoch_score=acc_score, model=global_model, model_path=args.save_path + model_name)
 
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))

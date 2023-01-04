@@ -380,8 +380,9 @@ def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, dev
         optimizer.zero_grad()
         output = 0.0
         for i in range(num_draws):
-            for p in model.parameters():
-                p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
+            with torch.no_grad():
+                for p in model.parameters():
+                    p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False))
             output = output + model(features)
         output = output/num_draws
         output = torch.squeeze(output)
