@@ -1202,6 +1202,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             history['val_history_acc'].append(valid_acc)
             history['test_history_loss'].append(test_loss)
             history['test_history_acc'].append(test_acc)
+            torch.save(global_model, args.save_path + model_name)
         else:
             history['train_history_loss'].append(train_loss)
             history['train_history_acc'].append(train_acc)
@@ -1212,8 +1213,13 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             history['demo_parity'].append(np.abs(male_prob - female_prob))
             history['equal_odd'].append(np.abs(male_tpr - female_tpr))
             history['disp_imp'].append(max(male_norm, female_norm))
+            torch.save(global_model, args.save_path + model_name)
+            torch.save(model_mal, args.save_path + 'male_{}'.format(model_name))
+            torch.save(model_fem, args.save_path + 'female_{}'.format(model_name))
         #
-        es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
+
+
+        # es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
         # args = reduce_lr(epoch_score=valid_acc)
         # if es.early_stop:
         #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
