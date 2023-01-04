@@ -436,19 +436,27 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         noise_m, noise_f = noise
         X_train, X_valid, X_test, X_mal, X_fem = X
         y_train, y_valid, y_test, y_mal, y_fem = y
-        pred_tr, pred_va, pred_te, pred_m, pred_f = (0.0 for i in range(5))
+        pred_tr, pred_va, pred_te, pred_m, pred_f, pred_mg, pred_fg = (0.0 for i in range(7))
+        model_m, model_f, model_g = model
         for i in range(args.num_draws):
-            temp = model + (1/2)*(noise_m[i] + noise_f[i])
-            pred_tr = pred_tr + torch.sigmoid(torch.mm(torch.from_numpy(X_train.astype(np.float32)), temp))
-            pred_va = pred_va + torch.sigmoid(torch.mm(torch.from_numpy(X_valid.astype(np.float32)), temp))
-            pred_te = pred_te + torch.sigmoid(torch.mm(torch.from_numpy(X_test.astype(np.float32)), temp))
-            pred_m = pred_m + torch.sigmoid(torch.mm(torch.from_numpy(X_mal.astype(np.float32)), temp))
-            pred_f = pred_f + torch.sigmoid(torch.mm(torch.from_numpy(X_fem.astype(np.float32)), temp))
+            temp_g = model_g + (1/2)*(noise_m[i] + noise_f[i])
+            temp_m = model_m + noise_m[i]
+            temp_f = model_f + noise_f[i]
+            pred_tr = pred_tr + torch.sigmoid(torch.mm(torch.from_numpy(X_train.astype(np.float32)), temp_g))
+            pred_va = pred_va + torch.sigmoid(torch.mm(torch.from_numpy(X_valid.astype(np.float32)), temp_g))
+            pred_te = pred_te + torch.sigmoid(torch.mm(torch.from_numpy(X_test.astype(np.float32)), temp_g))
+            pred_mg = pred_mg + torch.sigmoid(torch.mm(torch.from_numpy(X_mal.astype(np.float32)), temp_g))
+            pred_fg = pred_fg + torch.sigmoid(torch.mm(torch.from_numpy(X_fem.astype(np.float32)), temp_g))
+            pred_mg = pred_mg + torch.sigmoid(torch.mm(torch.from_numpy(X_mal.astype(np.float32)), temp_m))
+            pred_fg = pred_fg + torch.sigmoid(torch.mm(torch.from_numpy(X_fem.astype(np.float32)), temp_f))
         pred_tr = (1 / args.num_draws) * pred_tr
         pred_va = (1 / args.num_draws) * pred_va
         pred_te = (1 / args.num_draws) * pred_te
         pred_m = (1 / args.num_draws) * pred_m
         pred_f = (1 / args.num_draws) * pred_f
+        pred_mg = (1 / args.num_draws) * pred_mg
+        pred_fg = (1 / args.num_draws) * pred_fg
+
         acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
         acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
         acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
@@ -456,16 +464,19 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         loss_va = logloss(y=y_valid, pred=pred_va.detach().numpy())
         loss_te = logloss(y=y_test, pred=pred_te.detach().numpy())
 
-        tn, fp, fn, tp = confusion_matrix(y_mal, np.round(pred_m.detach().numpy())).ravel()
+        tn, fp, fn, tp = confusion_matrix(y_mal, np.round(pred_mg.detach().numpy())).ravel()
         male_tpr = tp / (tp + fn)
-        male_prob = np.sum(np.round(pred_m.detach().numpy())) / pred_m.shape[0]
+        male_prob = np.sum(np.round(pred_mg.detach().numpy())) / pred_mg.shape[0]
 
-        tn, fp, fn, tp = confusion_matrix(y_fem, np.round(pred_f.detach().numpy())).ravel()
+        tn, fp, fn, tp = confusion_matrix(y_fem, np.round(pred_fg.detach().numpy())).ravel()
         female_tpr = tp / (tp + fn)
-        female_prob = np.sum(np.round(pred_f.detach().numpy())) / pred_f.shape[0]
+        female_prob = np.sum(np.round(pred_fg.detach().numpy())) / pred_fg.shape[0]
 
+        male_norm = torch.norm(pred_mg - pred_m, p=2).item()/pred_m.size(0)
+        female_norm = torch.norm(pred_fg - pred_f, p=2).item()/pred_f.size(0)
+        norm = (male_norm, female_norm)
         return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
-        male_tpr, female_tpr), (male_prob, female_prob)
+        male_tpr, female_tpr), (male_prob, female_prob), norm
 
 class ReduceOnPlatau:
     def __init__(self, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 5e-5):
