@@ -210,12 +210,14 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         'val_history_loss': [],
         'val_history_acc': [],
         'demo_parity': [],
+        'acc_parity': [],
         'equal_odd': [],
         'disp_imp': [],
         'test_history_loss': [],
         'test_history_acc': [],
         'best_test': 0,
         'best_demo_parity': 0,
+        'best_acc_parity': 0,
         'best_equal_odd': 0,
         'best_disp_imp': 0,
     }
@@ -230,13 +232,13 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         train_loss, train_out, train_targets = train_fn(train_loader, model, criterion, optimizer, device,
                                                         scheduler=None)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
-        _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
-        _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
         test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                    model=model, device=device)
         _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
                                           female_loader=valid_female_loader, model=model, device=device)
+        acc_par = acc_parity(male_loader=valid_male_loader,
+                             female_loader=valid_female_loader, model=model, device=device)
         male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
                                                   female_loader=valid_female_loader,
                                                   global_model=model,
@@ -248,9 +250,6 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
-
-        male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
-        female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
 
         # scheduler.step(acc_score)
         # scheduler_male.step(male_acc_score)
@@ -264,6 +263,7 @@ def run_fair(fold, train_df, test_df, male_df, female_df, args, device, current_
         history['val_history_loss'].append(val_loss)
         history['val_history_acc'].append(acc_score)
         history['demo_parity'].append(demo_p)
+        history['acc_parity'].append(acc_par)
         history['equal_odd'].append(equal_odd)
         history['disp_imp'].append(max(male_norm, female_norm))
         history['test_history_loss'].append(test_loss)
@@ -346,6 +346,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         'val_history_loss': [],
         'val_history_acc': [],
         'demo_parity': [],
+        'acc_parity': [],
         'equal_odd': [],
         'disp_imp': [],
         'test_history_loss': [],
@@ -354,6 +355,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         'best_demo_parity': 0,
         'best_equal_odd': 0,
         'best_disp_imp': 0,
+        'best_acc_parity': 0,
     }
 
     # THE ENGINE LOOP
@@ -385,8 +387,6 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
                                                                         clipping=args.clip,
                                                                         noise_scale=args.ns)
         val_loss, outputs, targets = eval_fn(valid_loader, model, criterion, device)
-        _, male_out, male_tar = eval_fn(valid_male_loader, model_male, criterion, device)
-        _, female_out, female_tar = eval_fn(valid_female_loader, model_female, criterion, device)
         test_loss, test_outputs, test_targets = eval_fn(test_loader, model, criterion, device)
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                    model=model, device=device)
@@ -400,12 +400,11 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
                                                   num_male=args.num_val_male,
                                                   num_female=args.num_val_female,
                                                   device=device)
+        acc_par = acc_parity(male_loader=valid_male_loader,
+                             female_loader=valid_female_loader, model=model, device=device)
         train_acc = accuracy_score(train_targets, np.round(np.array(train_out)))
         test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
-
-        male_acc_score = accuracy_score(male_tar, np.round(np.array(male_out)))
-        female_acc_score = accuracy_score(female_tar, np.round(np.array(female_out)))
 
         # scheduler.step(acc_score)
         # scheduler_male.step(male_acc_score)
@@ -421,6 +420,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
         history['demo_parity'].append(demo_p)
+        history['acc_parity'].append(acc_par)
         history['disp_imp'].append(max(male_norm, female_norm))
         history['equal_odd'].append(equal_odd)
 
@@ -502,6 +502,8 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         'test_history_loss': [],
         'test_history_acc': [],
         'demo_parity': [],
+        'acc_parity': [],
+        'equal_odd': [],
         'disp_imp': [],
         'best_test': 0,
         'best_demo_parity': 0,
@@ -548,15 +550,16 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
 
         global_model.load_state_dict(global_dict)
 
-        val_male_loss, outputs_male, targets_male = eval_fn(valid_male_loader, global_model, criterion, device)
-        val_female_loss, outputs_female, targets_female = eval_fn(valid_female_loader, global_model, criterion, device)
+        # val_male_loss, outputs_male, targets_male = eval_fn(valid_male_loader, global_model, criterion, device)
+        # val_female_loss, outputs_female, targets_female = eval_fn(valid_female_loader, global_model, criterion, device)
         train_loss, train_output, train_target = eval_fn(train_loader, global_model, criterion, device)
         valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
         test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
 
         _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
                                    model=global_model, device=device)
-
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                          female_loader=valid_female_loader, model=global_model, device=device)
         male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
                                                   female_loader=valid_female_loader,
                                                   global_model=global_model,
@@ -566,8 +569,8 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
                                                   num_female=args.num_val_female,
                                                   device=device)
 
-        acc_male_score = accuracy_score(targets_male, np.round(np.array(outputs_male)))
-        acc_female_score = accuracy_score(targets_female, np.round(np.array(outputs_female)))
+        acc_par = acc_parity(male_loader=valid_male_loader,
+                             female_loader=valid_female_loader, model=global_model, device=device)
         train_acc = accuracy_score(train_target, np.round(np.array(train_output)))
         val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
         test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
@@ -585,6 +588,8 @@ def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args,
         history['val_history_loss'].append(valid_loss)
         history['val_history_acc'].append(val_acc)
         history['demo_parity'].append(demo_p)
+        history['equal_odd'].append(equal_odd)
+        history['acc_parity'].append(acc_par)
         history['disp_imp'].append(max(male_norm, female_norm))
         history['empi_bound'].append(bound_kl_emp(M))
 

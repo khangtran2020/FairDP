@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 def demo_parity(male_loader, female_loader, model, device):
     model.to(device)
@@ -206,3 +206,45 @@ def disperate_impact_smooth(male_loader, female_loader, global_model, male_model
     male_norm = np.sum(np.abs(male_outputs - glob_male_out))
     female_norm = np.sum(np.abs(female_outputs - glob_female_out))
     return male_norm / num_male, female_norm / num_female
+
+def acc_parity(male_loader, female_loader, model, device):
+    model.to(device)
+    male_outputs = []
+    male_target = []
+    female_outputs = []
+    female_target = []
+
+    model.eval()
+    with torch.no_grad():
+
+        for bi, d in enumerate(male_loader):
+            features, target, _ = d
+
+            features = features.to(device, dtype=torch.float)
+            target = target.to(device, dtype=torch.float)
+
+            outputs = model(features)
+            # if outputs.size(dim=0) > 1:
+            outputs = torch.squeeze(outputs, dim=-1)
+            outputs = outputs.cpu().detach().numpy()
+            male_outputs.extend(outputs)
+            male_target.extend(target.cpu().detach().numpy().astype(int).tolist())
+
+        for bi, d in enumerate(female_loader):
+            features, target, _ = d
+
+            features = features.to(device, dtype=torch.float)
+            target = target.to(device, dtype=torch.float)
+
+            outputs = model(features)
+            # if outputs.size(dim=0) > 1:
+            outputs = torch.squeeze(outputs, dim=-1)
+            outputs = outputs.cpu().detach().numpy()
+            female_outputs.extend(outputs)
+            female_target.extend(target.cpu().detach().numpy().astype(int).tolist())
+
+    male_outputs = np.round(np.array(male_outputs))
+    male_acc = accuracy_score(y_true=male_target, y_pred=male_outputs)
+    female_outputs = np.round(np.array(female_outputs))
+    female_acc = accuracy_score(y_true=female_target, y_pred=female_outputs)
+    return np.abs(male_acc - female_acc)
