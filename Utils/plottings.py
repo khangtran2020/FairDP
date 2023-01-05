@@ -198,21 +198,22 @@ def print_history_fair(fold, history, num_epochs, args, current_time):
 
     axs[1].legend()
 
-    axs[2].plot(
-        np.arange(num_epochs),
-        history['disp_imp'],
-        '-o',
-        label='Imperical Results',
-    )
-    axs[2].plot(
-        np.arange(num_epochs),
-        icml_bound(args=args, d=history['norm_model']),
-        '-o',
-        label='ICML bound',
-    )
-    axs[2].set_ylabel(r'$L_1$-norm', size=14)
-    axs[2].set_xlabel('Epochs', size=14)
-    axs[2].set_title(f'FOLD {fold + 1}', size=18)
+    if args.mode == 'smooth':
+        axs[2].plot(
+            np.arange(num_epochs),
+            history['disp_imp'],
+            '-o',
+            label='Imperical Results',
+        )
+        axs[2].plot(
+            np.arange(num_epochs),
+            icml_bound(args=args, d=history['norm_model']),
+            '-o',
+            label='ICML bound',
+        )
+        axs[2].set_ylabel(r'$L_1$-norm', size=14)
+        axs[2].set_xlabel('Epochs', size=14)
+        axs[2].set_title(f'FOLD {fold + 1}', size=18)
     plt.savefig(save_name)
 
 
