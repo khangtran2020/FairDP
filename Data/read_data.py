@@ -17,6 +17,11 @@ def read_adult(args):
     test_df = pd.read_csv('Data/Adult/adult.test', skiprows=1, header=None)
     all_data = pd.concat([train_df, test_df], axis=0)
     all_data.columns = header
+    feature_cols = list(train_df.columns)
+    feature_cols.remove('income')
+    feature_cols.remove('sex')
+    label = 'income'
+    z = 'sex'
     def hour_per_week(x):
         if x <= 19:
             return '0'
@@ -70,14 +75,12 @@ def read_adult(args):
     all_data['sex'] = lb.fit_transform(all_data['sex'].values)
     lb = LabelEncoder()
     all_data['income'] = lb.fit_transform(all_data['income'].values)
+    if args.mode == 'func':
+        all_data = minmax_scale(df=all_data, cols = feature_cols)
+        all_data['bias'] = 1.0
+        feature_cols.append('bias')
     train_df = all_data[:train_df.shape[0]].reset_index(drop=True)
     test_df = all_data[train_df.shape[0]:].reset_index(drop=True)
-
-    feature_cols = list(train_df.columns)
-    feature_cols.remove('income')
-    feature_cols.remove('sex')
-    label = 'income'
-    z = 'sex'
     fold_separation(train_df, args.folds, feature_cols, label)
     male_df = train_df[train_df['sex'] == 1].copy()
     female_df = train_df[train_df['sex'] == 0].copy()
@@ -94,6 +97,10 @@ def read_bank(args):
     feature_cols.remove('intercept')
     label = 'y'
     z = 'z'
+    if args.mode == 'func':
+        df = minmax_scale(df=df, cols = feature_cols)
+        df['bias'] = 1.0
+        feature_cols.append('bias')
     train_df = df[df['is_train'] == 1].reset_index(drop=True)
     test_df = df[df['is_train'] == 0].reset_index(drop=True)
     male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
@@ -107,16 +114,20 @@ def read_bank(args):
 def read_stroke(args):
     # 1436
     df = pd.read_csv('Data/Stroke/formated_stroke.csv')
-    train_df = df[df['is_train'] == 1].reset_index(drop=True)
-    test_df = df[df['is_train'] == 0].reset_index(drop=True)
-    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
-    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
-    feature_cols = list(train_df.columns)
+    feature_cols = list(df.columns)
     feature_cols.remove('y')
     feature_cols.remove('z')
     feature_cols.remove('is_train')
     label = 'y'
     z = 'z'
+    if args.mode == 'func':
+        df = minmax_scale(df=df, cols = feature_cols)
+        df['bias'] = 1.0
+        feature_cols.append('bias')
+    train_df = df[df['is_train'] == 1].reset_index(drop=True)
+    test_df = df[df['is_train'] == 0].reset_index(drop=True)
+    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
     fold_separation(train_df, args.folds, feature_cols, label)
@@ -127,3 +138,9 @@ def fold_separation(train_df, folds, feat_cols, label):
     train_df['fold'] = np.zeros(train_df.shape[0])
     for i, (idxT, idxV) in enumerate(skf.split(train_df[feat_cols], train_df[label])):
         train_df.at[idxV, 'fold'] = i
+
+def minmax_scale(df, cols):
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    for col in cols:
+        df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
+    return df

@@ -264,23 +264,24 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
     if args.submode == 'func':
         coff_0, coff_1, coff_2 = coff
         Q = torch.from_numpy(Q)
-        loss = coff_0 + torch.mm(torch.mm(Q, model).T, coff_1) + torch.mm(
-            torch.mm(torch.mm(Q, model).T.float(), coff_2.float()), torch.mm(Q, model))
+        # print(coff_2.size(), coff_1.size(), Q.size(), model.size())
+        loss = coff_0 + torch.mm(coff_1.T, torch.mm(Q.T, model)) \
+               + torch.mm(torch.mm(torch.mm(Q.T, model).T, coff_2), torch.mm(Q.T, model))
         model.retain_grad()
         loss.backward()
     elif args.submode == 'torch':
         coff_0, coff_1, coff_2 = coff
-        loss = coff_0 + torch.mm(model.T, coff_1) + torch.mm(
-            torch.mm(model.T.float(), coff_2.float()), model)
+        loss = coff_0 + torch.mm(coff_1.T, model) + torch.mm(
+            torch.mm(model.T, coff_2), model)
         model.retain_grad()
         loss.backward()
     elif args.submode == 'fairdp':
         coff_0, coff_1, coff_2 = coff
         Q = torch.from_numpy(Q)
-        # print(Q.size(), Q_.size(), model.size(), model_.size())
-        loss = (1 / args.num_draws) * (coff_0 + torch.mm(torch.mm(Q, model + noise).T, coff_1) + torch.mm(
-            torch.mm(torch.mm(Q, model + noise).T.float(), coff_2.float()),
-            torch.mm(Q, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
+        # torch.mm(torch.mm(torch.mm(Q.T, model).T, coff_2), torch.mm(Q.T, model))
+        loss = (1 / args.num_draws) * (coff_0 + torch.mm(coff_1.T, torch.mm(Q.T, model + noise)) + torch.mm(
+            torch.mm(torch.mm(Q.T, model + noise).T, coff_2),
+            torch.mm(Q.T, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
             model-model_, p=2)
         model.retain_grad()
         loss.backward()
@@ -306,7 +307,8 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
 
 def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch' or args.submode == 'func_org':
-        pred = torch.sigmoid(torch.mm(torch.from_numpy(X.astype(np.float32)), model))
+        feat = torch.from_numpy(X.astype(np.float32))
+        pred = torch.sigmoid(torch.mm(feat, model))
         loss = logloss(y=y, pred=pred.detach().numpy())
         acc = accuracy_score(y_true=y, y_pred=np.round(pred.detach().numpy()))
         if fair:

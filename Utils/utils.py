@@ -60,32 +60,28 @@ def logloss(y, pred):
 def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     num_data_point = X.shape[0]
     num_feat = X.shape[1]
-    sensitivity = num_feat ** 2 / 4 + 3 * num_feat
-    lbda = sensitivity * 4 / epsilon
+    sensitivity = num_feat ** 2 / 4 + num_feat
     coff_0 = 1.0
     coff_1 = np.sum(X / 2 - X * y, axis=0).astype(np.float32)
-    coff_2 = np.dot(X.T, X).astype(np.float32)
+    coff_2 = (1/8)*np.dot(X.T, X).astype(np.float32)
     noise_1 = np.random.laplace(0.0, sensitivity / epsilon, coff_1.shape).astype(np.float32)
     noise_2 = np.random.laplace(0.0, sensitivity / epsilon, coff_2.shape).astype(np.float32)
     if mode == 'scipy':
         return coff_0, (1 / num_data_point) * coff_1.reshape(-1, 1), (1 / num_data_point) * coff_2
-    elif mode == 'scipy_dp':
-        coff_1 = coff_1.reshape(-1, 1)
-        coff_1 = coff_1 + noise_1
-        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T # + lbda * np.identity(num_feat)
-        return coff_0, (1 / num_data_point) * coff_1, (1 / num_data_point) * coff_2
     elif mode == 'torch' or mode == 'fair':
         return coff_0, (1 / num_data_point) * torch.from_numpy(coff_1.reshape(-1, 1)), (
                 1 / num_data_point) * torch.from_numpy(coff_2)
     elif mode == 'func' or mode == 'fairdp' or mode == 'func_org':
         coff_1 = coff_1 + noise_1
-        coff_2 = coff_2 + np.triu(noise_2, k=0) + np.triu(noise_2, k=1).T # + lbda * np.identity(num_feat)
+        coff_2 = coff_2 + noise_2
+        coff_2 = 1/2 + (coff_2 + coff_2.T)
+        coff_2 = coff_2 + 5 * np.sqrt(2) * sensitivity * (1/epsilon) * np.eye(num_feat)
         w, V = np.linalg.eig(coff_2)
-        indx = np.where(w > 0)[0]
+        indx = np.where(w > 1e-8)[0]
         w = w[indx].astype(np.float32)
-        V = V[indx, :].astype(np.float32)
-        coff_2 = np.identity(len(w)) * w.astype(np.float32)
-        coff_1 = np.dot(coff_1, V.T).astype(np.float32)
+        V = V[:, indx].astype(np.float32)
+        coff_2 = np.diag(w)
+        coff_1 = np.dot(V.T, coff_1).astype(np.float32)
         return coff_0, (1 / num_data_point) * torch.from_numpy(coff_1.reshape(-1, 1)), (
                 1 / num_data_point) * torch.from_numpy(coff_2), V,
 
@@ -258,6 +254,15 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         df_train_fem = female_df[female_df.fold != fold]
         df_val_mal = male_df[male_df.fold == fold]
         df_val_fem = female_df[female_df.fold == fold]
+
+        df_train['bias'] = 1
+        df_valid['bias'] = 1
+        df_train_mal['bias'] = 1
+        df_train_fem['bias'] = 1
+        df_val_mal['bias'] = 1
+        df_val_fem['bias'] = 1
+
+
 
         # female
         X_fem = df_train_fem[args.feature].values

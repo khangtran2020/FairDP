@@ -19,7 +19,7 @@ def run(args, current_time, device):
         args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
-        print(feature_cols)
+        # print(train_df.max(axis=0), train_df.min(axis=0))
     elif args.dataset == 'bank':
         train_df, test_df, male_df, female_df, feature_cols, label, z = read_bank(args)
         args.feature = feature_cols
@@ -27,7 +27,7 @@ def run(args, current_time, device):
         args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
-        print(feature_cols)
+        # print(train_df.max(axis=0), train_df.min(axis=0))
     elif args.dataset == 'stroke':
         train_df, test_df, male_df, female_df, feature_cols, label, z = read_stroke(args)
         args.feature = feature_cols
@@ -35,7 +35,7 @@ def run(args, current_time, device):
         args.z = z
         args.input_dim = len(feature_cols)
         args.output_dim = 1
-        print(feature_cols)
+        # print(train_df.max(axis=0), train_df.min(axis=0))
 
     # running process
     if args.mode == 'clean':

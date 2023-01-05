@@ -727,7 +727,6 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             loss_fem = loss_f
         # with torch.no_grad():
         # print('Epoch {}:'.format(epoch),model_mal.grad, model_fem.grad)
-
         if args.submode == 'func_org':
             global_model = global_model - args.lr * global_model.grad
         else:
@@ -758,7 +757,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
         else:
-            acc, loss, _, tpr, prob, norm = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
+            acc, loss, _, tpr, prob, norm = fair_evaluate(args=args, model=(global_model, model_mal, model_fem),
+                                                          noise=(noise_mal, noise_fem),
                                                           X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
                                                           y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
             train_acc, valid_acc, test_acc = acc
@@ -839,6 +839,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
@@ -910,13 +911,13 @@ def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, curren
         acc_score = accuracy_score(targets, np.round(np.array(outputs)))
 
         male_norm, female_norm = disperate_impact_smooth(male_loader=valid_male_loader,
-                                                  female_loader=valid_female_loader,
-                                                  global_model=global_model,
-                                                  male_model=model_male,
-                                                  female_model=model_female,
-                                                  num_male=args.num_val_male,
-                                                  num_female=args.num_val_female,
-                                                  device=device, num_draws=args.num_draws)
+                                                         female_loader=valid_female_loader,
+                                                         global_model=global_model,
+                                                         male_model=model_male,
+                                                         female_model=model_female,
+                                                         num_male=args.num_val_male,
+                                                         num_female=args.num_val_female,
+                                                         device=device, num_draws=args.num_draws)
         # scheduler.step(acc_score)
 
         tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=val_loss,
@@ -924,7 +925,7 @@ def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, curren
         params_ = model_female.state_dict()
         l2_norm = 0.0
         for p in model_male.named_parameters():
-            l2_norm += torch.norm(p[1] - params_[p[0]], p=2)**2
+            l2_norm += torch.norm(p[1] - params_[p[0]], p=2) ** 2
 
         history['train_history_loss'].append(train_loss)
         history['train_history_acc'].append(train_acc)
