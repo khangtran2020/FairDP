@@ -512,7 +512,7 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
             batch_size=int(args.sampling_rate * len(train_dataset)),
             num_workers=0,
             sampler=sampler_,
-            shuffle=True,
+            # shuffle=True,
             pin_memory=True,
             drop_last=True,
         )
