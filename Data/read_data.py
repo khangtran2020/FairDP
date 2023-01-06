@@ -17,11 +17,6 @@ def read_adult(args):
     test_df = pd.read_csv('Data/Adult/adult.test', skiprows=1, header=None)
     all_data = pd.concat([train_df, test_df], axis=0)
     all_data.columns = header
-    feature_cols = list(train_df.columns)
-    feature_cols.remove('income')
-    feature_cols.remove('sex')
-    label = 'income'
-    z = 'sex'
     def hour_per_week(x):
         if x <= 19:
             return '0'
@@ -75,6 +70,11 @@ def read_adult(args):
     all_data['sex'] = lb.fit_transform(all_data['sex'].values)
     lb = LabelEncoder()
     all_data['income'] = lb.fit_transform(all_data['income'].values)
+    feature_cols = list(all_data.columns)
+    feature_cols.remove('income')
+    feature_cols.remove('sex')
+    label = 'income'
+    z = 'sex'
     if args.mode == 'func':
         all_data = minmax_scale(df=all_data, cols = feature_cols)
         all_data['bias'] = 1.0
