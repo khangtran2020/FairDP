@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, run_mode=None, skip_ep = 100):
+    def __init__(self, patience=7, mode="max", delta=0.001, verbose=False, run_mode=None, skip_ep=100):
         self.patience = patience
         self.counter = 0
         self.mode = mode
@@ -58,8 +58,9 @@ class EarlyStopping:
                 torch.save(model, model_path)
         self.val_score = epoch_score
 
+
 class ReduceOnPlatau:
-    def __init__(self, mode="max", delta=1e-4, verbose=False, args=None, min_lr = 5e-5):
+    def __init__(self, mode="max", delta=1e-4, verbose=False, args=None, min_lr=5e-5):
         self.patience = args.lr_patience
         self.counter = 0
         self.mode = mode
@@ -100,6 +101,7 @@ class ReduceOnPlatau:
             self.counter = 0
         return self.args
 
+
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
     model.train()
@@ -134,6 +136,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
     return train_loss, train_outputs, train_targets
 
+
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []
@@ -159,6 +162,7 @@ def eval_fn(data_loader, model, criterion, device):
             fin_outputs.extend(outputs)
 
     return loss, fin_outputs, fin_targets
+
 
 def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)
@@ -210,7 +214,9 @@ def train_fn_dpsgd(dataloader, model, criterion, optimizer, device, scheduler, c
 
     return train_loss / num_data_point, train_outputs, train_targets
 
-def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
+
+def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer, device, scheduler, clipping,
+                                        noise_scale):
     model.to(device)
     model.train()
     noise_std = get_gaussian_noise(clipping, noise_scale)
@@ -260,6 +266,7 @@ def train_fn_dpsgd_one_batch_track_grad(dataloader, model, criterion, optimizer,
 
     return train_loss / num_data_point, train_outputs, train_targets, temp_par
 
+
 def update_one_step(args, model, model_, coff, Q, Q_, noise):
     if args.submode == 'func':
         coff_0, coff_1, coff_2 = coff
@@ -282,7 +289,7 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
         loss = (1 / args.num_draws) * (coff_0 + torch.mm(coff_1.T, torch.mm(Q.T, model + noise)) + torch.mm(
             torch.mm(torch.mm(Q.T, model + noise).T, coff_2),
             torch.mm(Q.T, model + noise))) + (1 / args.num_draws) * args.alpha * torch.norm(
-            model-model_, p=2)
+            model - model_, p=2)
         model.retain_grad()
         loss.backward()
     elif args.submode == 'func_org':
@@ -305,6 +312,7 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
     # print(model.grad)
     return loss.item()
 
+
 def fair_evaluate(args, model, noise, X, y, fair=False):
     if args.submode == 'func' or args.submode == 'torch' or args.submode == 'func_org':
         feat = torch.from_numpy(X.astype(np.float32))
@@ -325,7 +333,7 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         pred_tr, pred_va, pred_te, pred_m, pred_f, pred_mg, pred_fg = (0.0 for i in range(7))
         model_m, model_f, model_g = model
         for i in range(args.num_draws):
-            temp_g = model_g + (1/2)*(noise_m[i] + noise_f[i])
+            temp_g = model_g + (1 / 2) * (noise_m[i] + noise_f[i])
             temp_m = model_m + noise_m[i]
             temp_f = model_f + noise_f[i]
             pred_tr = pred_tr + torch.sigmoid(torch.mm(torch.from_numpy(X_train.astype(np.float32)), temp_g))
@@ -346,6 +354,10 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         acc_tr = accuracy_score(y_true=y_train, y_pred=np.round(pred_tr.detach().numpy()))
         acc_va = accuracy_score(y_true=y_valid, y_pred=np.round(pred_va.detach().numpy()))
         acc_te = accuracy_score(y_true=y_test, y_pred=np.round(pred_te.detach().numpy()))
+
+        male_acc = accuracy_score(y_true=y_mal, y_pred=np.round(pred_mg.detach().numpy()))
+        female_acc = accuracy_score(y_true=y_fem, y_pred=np.round(pred_fg.detach().numpy()))
+
         loss_tr = logloss(y=y_train, pred=pred_tr.detach().numpy())
         loss_va = logloss(y=y_valid, pred=pred_va.detach().numpy())
         loss_te = logloss(y=y_test, pred=pred_te.detach().numpy())
@@ -358,11 +370,13 @@ def fair_evaluate(args, model, noise, X, y, fair=False):
         female_tpr = tp / (tp + fn)
         female_prob = np.sum(np.round(pred_fg.detach().numpy())) / pred_fg.shape[0]
 
-        male_norm = torch.norm(pred_mg - pred_m, p=2).item()/pred_m.size(0)
-        female_norm = torch.norm(pred_fg - pred_f, p=2).item()/pred_f.size(0)
+        male_norm = torch.norm(pred_mg - pred_m, p=2).item() / pred_m.size(0)
+        female_norm = torch.norm(pred_fg - pred_f, p=2).item() / pred_f.size(0)
         norm = (male_norm, female_norm)
-        return (acc_tr, acc_va, acc_te), (loss_tr, loss_va, loss_te), (pred_tr, pred_va, pred_te, pred_m, pred_f), (
-        male_tpr, female_tpr), (male_prob, female_prob), norm
+        return (acc_tr, acc_va, acc_te, male_acc, female_acc), (loss_tr, loss_va, loss_te), (
+        pred_tr, pred_va, pred_te, pred_m, pred_f), (
+            male_tpr, female_tpr), (male_prob, female_prob), norm
+
 
 def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, device, scheduler, num_draws):
     model.to(device)
@@ -386,7 +400,7 @@ def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, dev
                 for p in model.parameters():
                     p.add_(torch.normal(mean=0.0, std=1.0, size=p.size(), requires_grad=False).to(device))
             output = output + model(features)
-        output = output/num_draws
+        output = output / num_draws
         output = torch.squeeze(output)
         l2_norm = 0.0
         for p in model.named_parameters():
@@ -405,6 +419,7 @@ def train_smooth_classifier(dataloader, model, model_, criterion, optimizer, dev
         train_outputs.extend(output)
 
     return train_loss, train_outputs, train_targets
+
 
 def eval_smooth_classifier(data_loader, model, criterion, device, num_draws):
     model.to(device)
@@ -435,6 +450,7 @@ def eval_smooth_classifier(data_loader, model, criterion, device, num_draws):
             fin_outputs.extend(outputs)
 
     return loss, fin_outputs, fin_targets
+
 
 def train_fn_dpsgd_one_batch(dataloader, model, criterion, optimizer, device, scheduler, clipping, noise_scale):
     model.to(device)

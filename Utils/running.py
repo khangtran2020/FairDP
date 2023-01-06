@@ -632,24 +632,14 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                             mode=args.submode)
         m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
                                                             mode=args.submode)
-    elif args.submode == 'func_org':
-        coff_0, coff_1, coff_2, Q = get_coefficient(X=X_train, y=y_train, epsilon=args.tar_eps, lbda=args.lamda,
-                                                    mode=args.submode)
     else:
         f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)
         m_coff_0, m_coff_1, m_coff_2 = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)
-
-    if args.submode == 'func_org':
-        global_model = torch.randn((len(args.feature), 1), requires_grad=True).float()
     model_mal = torch.randn((len(args.feature), 1), requires_grad=True).float()
     model_fem = torch.randn((len(args.feature), 1), requires_grad=True).float()
 
-    # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False, run_mode=args.mode)
-    # reduce_lr = ReduceOnPlatau(args=args, mode='max')
-    # History dictionary to store everything
     history = {
         'train_history_loss': [],
         'train_history_acc': [],
@@ -658,6 +648,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
         'demo_parity': [],
         'equal_odd': [],
         'disp_imp': [],
+        'acc_imp': [],
         'test_history_loss': [],
         'test_history_acc': [],
         'best_test': 0,
@@ -690,9 +681,9 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                          Q=None, Q_=None, noise=noise_f)
                 loss_mal += loss_m
                 loss_fem += loss_f
-            # loss_mal = loss_mal/args.num_draws
-            # loss_fem = loss_fem/args.num_draws
+
         elif args.submode == 'fairdp':
+
             for i in range(args.num_draws):
                 noise_m = torch.normal(0, args.ns_, size=model_mal.size(), requires_grad=False).float()
                 noise_f = torch.normal(0, args.ns_, size=model_fem.size(), requires_grad=False).float()
@@ -706,8 +697,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                          Q=Q_f, Q_=Q_m, noise=noise_f)
                 loss_mal += loss_m
                 loss_fem += loss_f
-            loss_mal = loss_mal / args.num_draws
-            loss_fem = loss_fem / args.num_draws
+
         elif args.submode == 'func':
             loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
                                      coff=(m_coff_0, m_coff_1, m_coff_2),
@@ -717,10 +707,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                      Q=Q_f, Q_=None, noise=None)
             loss_mal = loss_m
             loss_fem = loss_f
-        elif args.submode == 'func_org':
-            loss = update_one_step(args=args, model=global_model, model_=None,
-                                   coff=(coff_0, coff_1, coff_2),
-                                   Q=Q, Q_=None, noise=None)
+
         elif args.submode == 'torch':
             loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
                                      coff=(m_coff_0, m_coff_1, m_coff_2),
@@ -730,117 +717,61 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                      Q=None, Q_=None, noise=None)
             loss_mal = loss_m
             loss_fem = loss_f
-        # with torch.no_grad():
-        # print('Epoch {}:'.format(epoch),model_mal.grad, model_fem.grad)
-        if args.submode == 'func_org':
-            global_model = global_model - args.lr * global_model.grad
-        else:
-            model_mal = model_mal - args.lr * model_mal.grad
-            model_fem = model_fem - args.lr * model_fem.grad
-            global_model = (model_mal + model_fem) / 2
+
+        model_mal = model_mal - args.lr * model_mal.grad
+        model_fem = model_fem - args.lr * model_fem.grad
+        global_model = (model_mal + model_fem) / 2
 
         if args.submode == 'func' or args.submode == 'torch':
             train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
             valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
-            _, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
+            male_acc, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
                                                                  y=y_mal_val, fair=True)
-            _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
+            female_acc, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
                                                                        X=X_fem_val,
                                                                        y=y_fem_val, fair=True)
             _, _, male_pred_m = fair_evaluate(args=args, model=model_mal, noise=None, X=X_mal_val,
                                               y=y_mal_val, fair=False)
             _, _, female_pred_f = fair_evaluate(args=args, model=model_fem, noise=None, X=X_fem_val,
                                                 y=y_fem_val, fair=False)
-            # print(male_pred.size(), male_pred_m.size(), female_pred.size(), female_pred_f.size())
+
             male_norm = torch.norm(male_pred - male_pred_m, p=1).item() / male_pred.size(0)
             female_norm = torch.norm(female_pred - female_pred_f, p=1).item() / female_pred.size(0)
 
-
-        elif args.submode == 'func_org':
-            train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
-            valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
-            test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
         else:
             acc, loss, _, tpr, prob, norm = fair_evaluate(args=args, model=(global_model, model_mal, model_fem),
                                                           noise=(noise_mal, noise_fem),
                                                           X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
                                                           y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
-            train_acc, valid_acc, test_acc = acc
+            train_acc, valid_acc, test_acc, male_acc, female_acc = acc
             train_loss, valid_loss, test_loss = loss
             male_tpr, female_tpr = tpr
             male_prob, female_prob = prob
             male_norm, female_norm = norm
 
-        if args.submode == 'func_org':
-            global_model.grad = torch.zeros(global_model.size())
-        else:
-            model_mal.grad = torch.zeros(model_mal.size())
-            model_fem.grad = torch.zeros(model_fem.size())
+        model_mal.grad = torch.zeros(model_mal.size())
+        model_fem.grad = torch.zeros(model_fem.size())
 
         print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}, loss on male {}, female {}".format(
             epoch, train_loss, train_acc,
             valid_loss, valid_acc, loss_mal, loss_fem))
-        # print('Epoch {}: Loss on male {}, female {}'.format(epoch, loss_mal, loss_fem))
-        # tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
-        #                 Valid_ACC_SCORE=valid_acc)
-        #
 
-        if args.submode == 'func_org':
-            history['train_history_loss'].append(train_loss)
-            history['train_history_acc'].append(train_acc)
-            history['val_history_loss'].append(valid_loss)
-            history['val_history_acc'].append(valid_acc)
-            history['test_history_loss'].append(test_loss)
-            history['test_history_acc'].append(test_acc)
-            torch.save(global_model, args.save_path + model_name)
-        else:
-            history['train_history_loss'].append(train_loss)
-            history['train_history_acc'].append(train_acc)
-            history['val_history_loss'].append(valid_loss)
-            history['val_history_acc'].append(valid_acc)
-            history['test_history_loss'].append(test_loss)
-            history['test_history_acc'].append(test_acc)
-            history['demo_parity'].append(np.abs(male_prob - female_prob))
-            history['equal_odd'].append(np.abs(male_tpr - female_tpr))
-            history['disp_imp'].append(max(male_norm, female_norm))
-            torch.save(global_model, args.save_path + model_name)
-            torch.save(model_mal, args.save_path + 'male_{}'.format(model_name))
-            torch.save(model_fem, args.save_path + 'female_{}'.format(model_name))
-        #
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(valid_loss)
+        history['val_history_acc'].append(valid_acc)
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['demo_parity'].append(np.abs(male_prob - female_prob))
+        history['equal_odd'].append(np.abs(male_tpr - female_tpr))
+        history['disp_imp'].append(max(male_norm, female_norm))
+        history['acc_imp'].append(np.abs(male_acc - female_acc))
 
-        # es(epoch=epoch, epoch_score=valid_acc, model=global_model, model_path=args.save_path + model_name)
-        # args = reduce_lr(epoch_score=valid_acc)
-        # if es.early_stop:
-        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
-        #     break
-    global_model = torch.load(args.save_path + model_name)
-    if args.submode == 'func' or args.submode == 'torch':
-        train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
-        valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
-        test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
-        _, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
-                                                             y=y_mal_val, fair=True)
-        _, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
-                                                                   X=X_fem_val,
-                                                                   y=y_fem_val, fair=True)
-    elif args.submode == 'func_org':
-        train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
-        valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
-        test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
-    else:
-        acc, loss, _, tpr, prob = fair_evaluate(args=args, model=global_model, noise=(noise_mal, noise_fem),
-                                                X=(X_train, X_valid, X_test, X_mal_val, X_fem_val),
-                                                y=(y_train, y_valid, y_test, y_mal_val, y_fem_val))
-        train_acc, valid_acc, test_acc = acc
-        train_loss, valid_loss, test_loss = loss
-        male_tpr, female_tpr = tpr
-        male_prob, female_prob = prob
-    history['best_test'] = test_acc
-    if args.submode != 'func_org':
-        history['best_demo_parity'] = np.abs(male_prob - female_prob)
-        history['best_equal_odd'] = np.abs(male_tpr - female_tpr)
-        history['best_disp_imp'] = torch.norm(model_mal - model_fem, p=2).item()
+        torch.save(global_model, args.save_path + model_name)
+        torch.save(model_mal, args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_fem, args.save_path + 'female_{}'.format(model_name))
+
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
