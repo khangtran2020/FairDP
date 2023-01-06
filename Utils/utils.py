@@ -669,6 +669,131 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         args.num_val_male = len(df_val_mal)
         args.num_val_female = len(df_val_fem)
         return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
+    elif args.mode == 'fair_test':
+        df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
+            drop=True)
+        df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
+            drop=True)
+        df_train_mal = male_df[male_df.fold != fold]
+        df_train_fem = female_df[female_df.fold != fold]
+        df_val_mal = male_df[male_df.fold == fold]
+        df_val_fem = female_df[female_df.fold == fold]
+
+        # Defining DataSet
+        train_male_dataset = Data(
+            X=df_train_mal[args.feature].values,
+            y=df_train_mal[args.target].values,
+            ismale=df_train_mal[args.z].values
+        )
+
+        train_female_dataset = Data(
+            df_train_fem[args.feature].values,
+            df_train_fem[args.target].values,
+            ismale=df_train_fem[args.z].values
+        )
+
+        valid_male_dataset = Data(
+            df_val_mal[args.feature].values,
+            df_val_mal[args.target].values,
+            ismale=df_val_mal[args.z].values
+        )
+
+        valid_female_dataset = Data(
+            df_val_fem[args.feature].values,
+            df_val_fem[args.target].values,
+            ismale=df_val_fem[args.z].values
+        )
+
+        train_dataset = Data(
+            df_train[args.feature].values,
+            df_train[args.target].values,
+            ismale=df_train[args.z].values
+        )
+
+        valid_dataset = Data(
+            df_valid[args.feature].values,
+            df_valid[args.target].values,
+            ismale=df_valid[args.z].values
+        )
+
+        test_dataset = Data(
+            test_df[args.feature].values,
+            test_df[args.target].values,
+            ismale=test_df[args.z].values
+        )
+
+        batch_size = min(int(args.sampling_rate * len(train_male_dataset)), int(args.sampling_rate * len(train_female_dataset)))
+
+        # Defining DataLoader with BalanceClass Sampler
+        sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
+        train_male_loader = DataLoader(
+            train_male_dataset,
+            batch_size=batch_size,
+            pin_memory=True,
+            drop_last=True,
+            sampler=sampler_male,
+            num_workers=0
+        )
+
+        sampler_female = torch.utils.data.RandomSampler(train_female_dataset, replacement=False)
+        train_female_loader = DataLoader(
+            train_female_dataset,
+            batch_size=batch_size,
+            pin_memory=True,
+            drop_last=True,
+            sampler=sampler_female,
+            num_workers=0
+        )
+
+        valid_male_loader = torch.utils.data.DataLoader(
+            valid_male_dataset,
+            batch_size=args.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+        )
+
+        valid_female_loader = torch.utils.data.DataLoader(
+            valid_female_dataset,
+            batch_size=args.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+        )
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+        )
+
+        valid_loader = torch.utils.data.DataLoader(
+            valid_dataset,
+            batch_size=args.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+        )
+
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=args.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False,
+        )
+        args.n_batch = len(train_male_loader)
+        args.bs_male = batch_size
+        args.bs_female = batch_size
+        args.num_val_male = len(df_val_mal)
+        args.num_val_female = len(df_val_fem)
+        return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
 
 
 
