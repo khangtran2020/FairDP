@@ -136,8 +136,10 @@ def read_stroke(args):
 def read_abalone(args):
     # 1436
     df = pd.read_csv('Data/Abalone/formated_abalone.csv')
+    # print(df.head())
     feature_cols = list(df.columns)
     feature_cols.remove('y')
+    feature_cols.remove('label')
     feature_cols.remove('z')
     feature_cols.remove('is_train')
     label = 'y'

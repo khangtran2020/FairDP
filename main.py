@@ -37,7 +37,7 @@ def run(args, current_time, device):
         args.output_dim = 1
         # print(train_df.max(axis=0), train_df.min(axis=0))
     elif args.dataset == 'abalone':
-        train_df, test_df, male_df, female_df, feature_cols, label, z = read_stroke(args)
+        train_df, test_df, male_df, female_df, feature_cols, label, z = read_abalone(args)
         args.feature = feature_cols
         args.target = label
         args.z = z
