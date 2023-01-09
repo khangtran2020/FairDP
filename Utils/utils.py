@@ -796,5 +796,13 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
 
 
+# def choose_data(args, df_1, df_2):
+#
+#     if len(df_1) > len(df_2):
+#         df = df_2.copy()
+#         df_2 = df_1.copy()
+#         df_1 = df.copy()
+
+
 
 

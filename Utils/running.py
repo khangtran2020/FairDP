@@ -929,6 +929,7 @@ def run_fair_dpsgd_test(fold, train_df, test_df, male_df, female_df, args, devic
     print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
 
+
 def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
     model_name = '{}.pt'.format(name)
@@ -1038,4 +1039,169 @@ def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, curren
     test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     history['best_test'] = test_acc
+    save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
+
+def run_fair_dpsgd_track_grad_baseline(fold, train_df, test_df, male_df, female_df, args, device, current_time):
+    name = get_name(args=args, current_date=current_time, fold=fold)
+    model_name = '{}.pt'.format(name)
+
+    train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
+        args=args, fold=fold, train_df=train_df, test_df=test_df, male_df=male_df, female_df=female_df)
+
+    print(args.n_batch, args.bs_male + args.bs_female)
+    print(bound_kl(args=args, num_ep=args.epochs))
+
+    # Defining Model for specific fold
+    model_male = init_model(args=args)
+    model_female = init_model(args=args)
+    global_model = init_model(args=args)
+
+    model_male.to(device)
+    model_female.to(device)
+    global_model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+    optimizer_male = torch.optim.Adam(model_male.parameters(), lr=args.lr)
+    optimizer_female = torch.optim.Adam(model_female.parameters(), lr=args.lr)
+
+    # Defining LR SCheduler
+    # scheduler_male = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_male, mode='max',
+    #                                                             factor=0.1, patience=10, verbose=True,
+    #                                                             threshold=0.0001, threshold_mode='rel',
+    #                                                             cooldown=0, min_lr=1e-4, eps=1e-08)
+    # scheduler_female = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_female, mode='max',
+    #                                                               factor=0.1, patience=10, verbose=True,
+    #                                                               threshold=0.0001, threshold_mode='rel',
+    #                                                               cooldown=0, min_lr=1e-4, eps=1e-08)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+    # History dictionary to store everything
+    history = {
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'demo_parity': [],
+        'acc_parity': [],
+        'equal_odd': [],
+        'disp_imp': [],
+        'best_test': 0,
+        'best_demo_parity': 0,
+        'best_disp_imp': 0,
+        'best_epoch': 0,
+        'empi_bound': []
+    }
+
+    # THE ENGINE LOOP
+    M = 0.0
+    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    for epoch in tk0:
+        # global_dict = global_model.state_dict()
+        # model_male.load_state_dict(global_dict)
+        # model_female.load_state_dict(global_dict)
+
+        _, _, _, male_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_male_loader,
+                                                                model=model_male,
+                                                                criterion=criterion,
+                                                                optimizer=optimizer_male,
+                                                                device=device,
+                                                                scheduler=None,
+                                                                clipping=args.clip,
+                                                                noise_scale=args.ns)
+
+        _, _, _, female_par = train_fn_dpsgd_one_batch_track_grad(dataloader=train_female_loader,
+                                                                  model=model_female,
+                                                                  criterion=criterion,
+                                                                  optimizer=optimizer_female,
+                                                                  device=device,
+                                                                  scheduler=None,
+                                                                  clipping=args.clip,
+                                                                  noise_scale=args.ns)
+        grad_norm = 0
+        for p in global_model.named_parameters():
+            grad_norm += (male_par[p[0]] - female_par[p[0]]).norm(p=2) ** 2
+        # print(grad_norm.item() / (args.clip ** 2))
+        M_t = get_Mt(args=args, norm_grad=grad_norm.item())
+        M = M_t
+        male_dict = model_male.state_dict()
+        female_dict = model_female.state_dict()
+        for key in global_dict.keys():
+            global_dict[key] = torch.div(deepcopy(male_dict[key]) + deepcopy(female_dict[key]), 2)
+
+        global_model.load_state_dict(global_dict)
+
+        # val_male_loss, outputs_male, targets_male = eval_fn(valid_male_loader, global_model, criterion, device)
+        # val_female_loss, outputs_female, targets_female = eval_fn(valid_female_loader, global_model, criterion, device)
+        train_loss, train_output, train_target = eval_fn(train_loader, global_model, criterion, device)
+        valid_loss, valid_output, valid_target = eval_fn(valid_loader, global_model, criterion, device)
+        test_loss, test_output, test_target = eval_fn(test_loader, global_model, criterion, device)
+
+        _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                                   model=global_model, device=device)
+        _, _, equal_odd = equality_of_odd(male_loader=valid_male_loader,
+                                          female_loader=valid_female_loader, model=global_model, device=device)
+        male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                                  female_loader=valid_female_loader,
+                                                  global_model=global_model,
+                                                  male_model=model_male,
+                                                  female_model=model_female,
+                                                  num_male=args.num_val_male,
+                                                  num_female=args.num_val_female,
+                                                  device=device)
+
+        acc_par = acc_parity(male_loader=valid_male_loader,
+                             female_loader=valid_female_loader, model=global_model, device=device)
+        train_acc = accuracy_score(train_target, np.round(np.array(train_output)))
+        val_acc = accuracy_score(valid_target, np.round(np.array(valid_output)))
+        test_acc = accuracy_score(test_target, np.round(np.array(test_output)))
+
+        # scheduler_male.step(acc_male_score)
+        # scheduler_female.step(acc_female_score)
+
+        tk0.set_postfix(Train_Loss=train_loss, Train_ACC_SCORE=train_acc, Valid_Loss=valid_loss,
+                        Valid_ACC_SCORE=val_acc)
+
+        history['test_history_loss'].append(test_loss)
+        history['test_history_acc'].append(test_acc)
+        history['train_history_loss'].append(train_loss)
+        history['train_history_acc'].append(train_acc)
+        history['val_history_loss'].append(valid_loss)
+        history['val_history_acc'].append(val_acc)
+        history['demo_parity'].append(demo_p)
+        history['equal_odd'].append(equal_odd)
+        history['acc_parity'].append(acc_par)
+        history['disp_imp'].append(max(male_norm, female_norm))
+        history['empi_bound'].append(bound_kl_emp(M))
+
+        torch.save(model_male.state_dict(), args.save_path + 'male_{}'.format(model_name))
+        torch.save(model_female.state_dict(), args.save_path + 'female_{}'.format(model_name))
+        torch.save(global_model.state_dict(), args.save_path + model_name)
+        #
+        # if es.early_stop:
+        #     print('Maximum Patience {} Reached , Early Stopping'.format(args.patience))
+        #     break
+    global_model.load_state_dict(torch.load(args.save_path + model_name))
+    test_loss, test_outputs, test_targets = eval_fn(test_loader, global_model, criterion, device)
+    test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
+    _, _, demo_p = demo_parity(male_loader=valid_male_loader, female_loader=valid_female_loader,
+                               model=global_model, device=device)
+    male_norm, female_norm = disperate_impact(male_loader=valid_male_loader,
+                                              female_loader=valid_female_loader,
+                                              global_model=global_model,
+                                              male_model=model_male,
+                                              female_model=model_female,
+                                              num_male=args.num_val_male,
+                                              num_female=args.num_val_female,
+                                              device=device)
+    history['best_test'] = test_acc
+    history['best_demo_parity'] = demo_p
+    history['best_disp_imp'] = max(male_norm, female_norm)
+    history['best_epoch'] = es.best_epoch
+    print_history_track_grad(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)

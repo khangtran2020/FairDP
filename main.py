@@ -82,6 +82,19 @@ def run(args, current_time, device):
                 run_fair_dpsgd_track_grad(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df, train_df=train_df,
                                args=args, device=device,
                                current_time=current_time)
+    elif args.mode == 'fairdp_baseline':
+    # fold, train_df, test_df, male_df, female_df, args, device, current_time)
+        if args.debug:
+            run_fair_dpsgd_track_grad_baseline(fold=0, train_df=train_df, test_df=test_df, male_df=male_df,
+                                      female_df=female_df, args=args,
+                                      device=device,
+                                      current_time=current_time)
+        else:
+            for fold in range(args.folds):
+                run_fair_dpsgd_track_grad_baseline(fold=fold, male_df=male_df, female_df=female_df, test_df=test_df,
+                                          train_df=train_df,
+                                          args=args, device=device,
+                                          current_time=current_time)
     elif args.mode == 'func':
         # fold, train_df, test_df, male_df, female_df, args, device, current_time)
         if args.debug:
