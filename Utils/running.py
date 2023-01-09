@@ -1036,7 +1036,7 @@ def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, curren
 
     print_history_fair(fold, history, epoch + 1, args, current_time)
     global_model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, model, criterion, device)
+    test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, global_model, criterion, device)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
