@@ -1102,7 +1102,7 @@ def run_fair_dpsgd_track_grad_baseline(fold, train_df, test_df, male_df, female_
     M = 0.0
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        # global_dict = global_model.state_dict()
+        global_dict = global_model.state_dict()
         # model_male.load_state_dict(global_dict)
         # model_female.load_state_dict(global_dict)
 
