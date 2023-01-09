@@ -16,6 +16,7 @@ def add_general_group(group):
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
     group.add_argument('--dataset', type=str, default='adult', help="name of dataset")
+    group.add_argument('--ratio', type=float, default=0.5, help="ratio group0/group1 where group 0 always has less data points compare to group 1")
 
 def add_model_group(group):
     group.add_argument("--model_type", type=str, default='NormNN', help="Model type")

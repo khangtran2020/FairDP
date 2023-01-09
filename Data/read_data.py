@@ -84,9 +84,15 @@ def read_adult(args):
         feature_cols.append('bias')
     train_df = all_data[:train_df.shape[0]].reset_index(drop=True)
     test_df = all_data[train_df.shape[0]:].reset_index(drop=True)
-    fold_separation(train_df, args.folds, feature_cols, label)
     male_df = train_df[train_df['sex'] == 1].copy()
     female_df = train_df[train_df['sex'] == 0].copy()
+    fold_separation(male_df, args.folds, feature_cols, label)
+    fold_separation(female_df, args.folds, feature_cols, label)
+    if args.mode == 'ratio':
+        male_df, female_df = choose_data(args=args, df_0=male_df, df_1=female_df)
+        train_df = pd.concat([male_df, female_df], axis=0).sample(frac=1).reset_index(drop=True)
+    else:
+        train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def read_bank(args):
@@ -111,7 +117,11 @@ def read_bank(args):
 
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
-    train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
+    if args.mode == 'ratio':
+        male_df, female_df = choose_data(args=args, df_0=male_df, df_1=female_df)
+        train_df = pd.concat([male_df, female_df], axis=0).sample(frac=1).reset_index(drop=True)
+    else:
+        train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def read_stroke(args):
@@ -133,7 +143,11 @@ def read_stroke(args):
     female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
-    fold_separation(train_df, args.folds, feature_cols, label)
+    if args.mode == 'ratio':
+        male_df, female_df = choose_data(args=args, df_0=male_df, df_1=female_df)
+        train_df = pd.concat([male_df, female_df], axis=0).sample(frac=1).reset_index(drop=True)
+    else:
+        train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
 
 def read_abalone(args):
@@ -157,20 +171,12 @@ def read_abalone(args):
     female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
-    fold_separation(train_df, args.folds, feature_cols, label)
+    if args.mode == 'ratio':
+        male_df, female_df = choose_data(args=args, df_0=male_df, df_1=female_df)
+        train_df = pd.concat([male_df, female_df], axis=0).sample(frac=1).reset_index(drop=True)
+    else:
+        train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
-
-def fold_separation(train_df, folds, feat_cols, label):
-    skf = StratifiedKFold(n_splits=folds)
-    train_df['fold'] = np.zeros(train_df.shape[0])
-    for i, (idxT, idxV) in enumerate(skf.split(train_df[feat_cols], train_df[label])):
-        train_df.at[idxV, 'fold'] = i
-
-def minmax_scale(df, cols):
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    for col in cols:
-        df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
-    return df
 
 def read_utk(args):
     df = pd.read_csv('Data/UTK/feat.zip', compression='zip')
@@ -190,39 +196,50 @@ def read_utk(args):
     female_df = train_df[train_df['ethnicity'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
-    fold_separation(train_df, args.folds, feature_cols, label)
+    if args.mode == 'ratio':
+        male_df, female_df = choose_data(args=args, df_0=male_df, df_1=female_df)
+        train_df = pd.concat([male_df, female_df], axis=0).sample(frac=1).reset_index(drop=True)
+    else:
+        train_df = pd.concat([male_df, female_df], axis=0).reset_index(drop=True)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
 
-# options = {'bs':512, 'label': 'gender', 'bin_labels':False}
-# def get_UTK(args):
-#     utk_data_path = "Data/Abalone/age_gender.gz"
-#     torch.manual_seed(0)
-#     label = 'gender'
-#     pd00 = pd.read_csv(utk_data_path, compression='gzip')
-#     age_bins = [0, 10, 15, 20, 25, 30, 40, 50, 60, 120]
-#     age_labels = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-#     pd00['age_bins'] = pd.cut(pd00.age, bins=age_bins, labels=age_labels)
-#     X = pd00.pixels.apply(lambda x: np.array(x.split(" "), dtype=float))
-#     X = np.stack(X)
-#     X = X / 255.0
-#     X = X.astype('float32').reshape(X.shape[0], 1, 48, 48)
-#     if options['bin_labels']:
-#         pd00[label] = pd00[label].apply(lambda x: x!=0).astype(int)
-#         n_class = 2
-#     y = pd00[label].values
-#     np.random.seed(0)  # random seed of partition data into train/test
-#     x_train, x_test, y_train, y_test  = train_test_split(X, y,  test_size=0.2)
-#     train_tensor = TensorDataset(torch.FloatTensor(x_train), torch.LongTensor(y_train))
-#     train_loader = DataLoader(dataset=train_tensor, batch_size= options['bs'], shuffle=True)
-#     #
-#     test_tensor = TensorDataset(torch.FloatTensor(x_test), torch.LongTensor(y_test))
-#     test_loader = DataLoader(dataset=test_tensor, batch_size=options['bs'], shuffle=True)
-#     x_test, y_test = torch.FloatTensor(x_test).cuda(), torch.LongTensor(y_test).cuda()
-#
-#     n_class =  int ( torch.max(y_test).item() + 1)
-#     params = {'x_test':x_test, 'y_test':y_test, 'train_loader':train_loader, 'test_loader':test_loader,
-#         'n_channel':1, 'n_hidden' :576, 'n_all':  1024, 'n_out':n_class, 'n_hidden_google':25600}
-#
-#     params['n_in'] = np.prod(x_test.shape[1:])
-#
-#     return params
+def fold_separation(train_df, folds, feat_cols, label):
+    skf = StratifiedKFold(n_splits=folds)
+    train_df['fold'] = np.zeros(train_df.shape[0])
+    for i, (idxT, idxV) in enumerate(skf.split(train_df[feat_cols], train_df[label])):
+        train_df.at[idxV, 'fold'] = i
+
+def minmax_scale(df, cols):
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    for col in cols:
+        df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
+    return df
+
+def choose_data(args, df_0, df_1):
+    if len(df_0) > len(df_1):
+        df = df_1.copy()
+        df_1 = df_0.copy()
+        df_0 = df.copy()
+        del(df)
+
+    init_rate = len(df_0)/len(df_0)
+    if init_rate == args.ratio:
+        return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
+    elif init_rate < args.ratio:
+        num_pt = int(len(df_0)/args.ratio)
+        if num_pt > len(df_1):
+            print('Can not achieve that rate between group0 and group1')
+            return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
+        else:
+            idx = np.random.choice(np.arange(len(df_1)), size=num_pt,replace=False)
+            df_1 = df_1[idx].copy()
+            return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
+    else:
+        num_pt = int(len(df_1)*args.ratio)
+        if num_pt == 0.0:
+            print('Can not achieve that rate between group0 and group1')
+            return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
+        else:
+            idx = np.random.choice(np.arange(len(df_0)), size=num_pt, replace=False)
+            df_0 = df_0[idx].copy()
+            return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
