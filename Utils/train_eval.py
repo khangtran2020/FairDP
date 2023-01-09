@@ -276,6 +276,14 @@ def update_one_step(args, model, model_, coff, Q, Q_, noise):
                + torch.mm(torch.mm(torch.mm(Q.T, model).T, coff_2), torch.mm(Q.T, model))
         model.retain_grad()
         loss.backward()
+    elif args.submode == 'func_org':
+        coff_0, coff_1, coff_2 = coff
+        Q = torch.from_numpy(Q)
+        # print(coff_2.size(), coff_1.size(), Q.size(), model.size())
+        loss = coff_0 + torch.mm(coff_1.T, torch.mm(Q.T, model)) \
+               + torch.mm(torch.mm(torch.mm(Q.T, model).T, coff_2), torch.mm(Q.T, model))
+        model.retain_grad()
+        loss.backward()
     elif args.submode == 'torch':
         coff_0, coff_1, coff_2 = coff
         loss = coff_0 + torch.mm(coff_1.T, model) + torch.mm(

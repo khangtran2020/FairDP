@@ -632,13 +632,23 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
                                                             mode=args.submode)
         m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
                                                             mode=args.submode)
+    elif args.submode == 'func_org':
+        f_coff_0, f_coff_1, f_coff_2, Q_f = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
+        m_coff_0, m_coff_1, m_coff_2, Q_m = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
+        g_coff_0, g_coff_1, g_coff_2, Q_g = get_coefficient(X=X_train, y=y_train, epsilon=args.tar_eps, lbda=args.lamda,
+                                                            mode=args.submode)
     else:
         f_coff_0, f_coff_1, f_coff_2 = get_coefficient(X=X_fem, y=y_fem, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)
         m_coff_0, m_coff_1, m_coff_2 = get_coefficient(X=X_mal, y=y_mal, epsilon=args.tar_eps, lbda=args.lamda,
                                                        mode=args.submode)
+
     model_mal = torch.randn((len(args.feature), 1), requires_grad=True).float()
     model_fem = torch.randn((len(args.feature), 1), requires_grad=True).float()
+    if args.submode == 'func_org':
+        global_model = torch.randn((len(args.feature), 1), requires_grad=True).float()
 
     history = {
         'train_history_loss': [],
@@ -708,6 +718,20 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             loss_mal = loss_m
             loss_fem = loss_f
 
+        elif args.submode == 'func_org':
+            loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
+                                     coff=(m_coff_0, m_coff_1, m_coff_2),
+                                     Q=Q_m, Q_=None, noise=None)
+            loss_f = update_one_step(args=args, model=model_fem, model_=model_mal,
+                                     coff=(f_coff_0, f_coff_1, f_coff_2),
+                                     Q=Q_f, Q_=None, noise=None)
+            loss = update_one_step(args=args, model=global_model, model_=None,
+                                   coff=(g_coff_0, g_coff_1, g_coff_2),
+                                   Q=Q_g, Q_=None, noise=None)
+
+            loss_mal = loss_m
+            loss_fem = loss_f
+
         elif args.submode == 'torch':
             loss_m = update_one_step(args=args, model=model_mal, model_=model_fem,
                                      coff=(m_coff_0, m_coff_1, m_coff_2),
@@ -718,11 +742,16 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             loss_mal = loss_m
             loss_fem = loss_f
 
-        model_mal = model_mal - args.lr * model_mal.grad
-        model_fem = model_fem - args.lr * model_fem.grad
-        global_model = (model_mal + model_fem) / 2
+        if args.submode != 'func_org':
+            model_mal = model_mal - args.lr * model_mal.grad
+            model_fem = model_fem - args.lr * model_fem.grad
+            global_model = (model_mal + model_fem) / 2
+        else:
+            model_mal = model_mal - args.lr * model_mal.grad
+            model_fem = model_fem - args.lr * model_fem.grad
+            global_model = global_model - args.lr * global_model.grad
 
-        if args.submode == 'func' or args.submode == 'torch':
+        if args.submode == 'func' or args.submode == 'torch' or args.submode == 'func_org':
             train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
             valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
@@ -754,6 +783,8 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
         model_mal.grad = torch.zeros(model_mal.size())
         model_fem.grad = torch.zeros(model_fem.size())
+        if args.submode == 'func_org':
+            global_model.grad = torch.zeros(global_model.size())
 
         print("Epoch {}: train loss {}, train acc {}, valid loss {}, valid acc {}, loss on male {}, female {}".format(
             epoch, train_loss, train_acc,
