@@ -546,7 +546,7 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         args.num_val_male = len(df_val_mal)
         args.num_val_female = len(df_val_fem)
         return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
-    elif args.mode in ['fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed', 'smooth']:
+    elif args.mode in ['fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed', 'smooth', 'fairdp_baseline']:
         df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
             drop=True)
         df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
