@@ -726,11 +726,13 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
             train_acc, train_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_train, y=y_train)
             valid_acc, valid_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_valid, y=y_valid)
             test_acc, test_loss, _ = fair_evaluate(args=args, model=global_model, noise=None, X=X_test, y=y_test)
-            male_acc, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None, X=X_mal_val,
-                                                                 y=y_mal_val, fair=True)
-            female_acc, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model, noise=None,
-                                                                       X=X_fem_val,
-                                                                       y=y_fem_val, fair=True)
+            male_acc, _, male_pred, male_tpr, male_prob = fair_evaluate(args=args, model=global_model, noise=None,
+                                                                        X=X_mal_val,
+                                                                        y=y_mal_val, fair=True)
+            female_acc, _, female_pred, female_tpr, female_prob = fair_evaluate(args=args, model=global_model,
+                                                                                noise=None,
+                                                                                X=X_fem_val,
+                                                                                y=y_fem_val, fair=True)
             _, _, male_pred_m = fair_evaluate(args=args, model=model_mal, noise=None, X=X_mal_val,
                                               y=y_mal_val, fair=False)
             _, _, female_pred_f = fair_evaluate(args=args, model=model_fem, noise=None, X=X_fem_val,
@@ -774,6 +776,7 @@ def run_functional_mechanism_logistic_regression(fold, train_df, test_df, male_d
 
     print_history_func(fold, history, epoch + 1, args, current_time)
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
+
 
 def run_fair_dpsgd_test(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
@@ -1036,7 +1039,8 @@ def run_smooth(fold, train_df, test_df, male_df, female_df, args, device, curren
 
     print_history_fair(fold, history, epoch + 1, args, current_time)
     global_model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, global_model, criterion, device)
+    test_loss, test_outputs, test_targets = eval_smooth_classifier(test_loader, global_model, criterion, device,
+                                                                   num_draws=args.num_draws)
     test_acc = accuracy_score(test_targets, np.round(np.array(test_outputs)))
     history['best_test'] = test_acc
     save_res(fold=fold, args=args, dct=history, current_time=current_time)
