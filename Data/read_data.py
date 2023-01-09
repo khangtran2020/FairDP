@@ -173,7 +173,7 @@ def minmax_scale(df, cols):
     return df
 
 def read_utk(args):
-    df = pd.read_csv('UTK/feat.zip', compression='zip')
+    df = pd.read_csv('Data/UTK/feat.zip', compression='zip')
     feature_cols = list(df.columns)
     feature_cols.remove('ethnicity')
     feature_cols.remove('gender')
@@ -186,8 +186,8 @@ def read_utk(args):
         feature_cols.append('bias')
     train_df = df[df['is_train'] == 1].reset_index(drop=True)
     test_df = df[df['is_train'] == 0].reset_index(drop=True)
-    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
-    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
+    male_df = train_df[train_df['ethnicity'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['ethnicity'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
     fold_separation(train_df, args.folds, feature_cols, label)
