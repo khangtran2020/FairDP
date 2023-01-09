@@ -44,6 +44,14 @@ def run(args, current_time, device):
         args.input_dim = len(feature_cols)
         args.output_dim = 1
         # print(train_df.max(axis=0), train_df.min(axis=0))
+    elif args.dataset == 'utk':
+        train_df, test_df, male_df, female_df, feature_cols, label, z = read_utk(args)
+        args.feature = feature_cols
+        args.target = label
+        args.z = z
+        args.input_dim = len(feature_cols)
+        args.output_dim = 1
+        # print(train_df.max(axis=0), train_df.min(axis=0))
     print('Running with dataset {}: {} train, {} test, {} male, {} female, {} features'.format(args.dataset,
                                                                                                len(train_df),
                                                                                                len(test_df),
