@@ -133,6 +133,28 @@ def read_stroke(args):
     fold_separation(train_df, args.folds, feature_cols, label)
     return train_df, test_df, male_df, female_df, feature_cols, label, z
 
+def read_abalone(args):
+    # 1436
+    df = pd.read_csv('Data/Abalone/formated_abalone.csv')
+    feature_cols = list(df.columns)
+    feature_cols.remove('y')
+    feature_cols.remove('z')
+    feature_cols.remove('is_train')
+    label = 'y'
+    z = 'z'
+    if args.mode == 'func':
+        df = minmax_scale(df=df, cols = feature_cols)
+        df['bias'] = 1.0
+        feature_cols.append('bias')
+    train_df = df[df['is_train'] == 1].reset_index(drop=True)
+    test_df = df[df['is_train'] == 0].reset_index(drop=True)
+    male_df = train_df[train_df['z'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['z'] == 0].copy().reset_index(drop=True)
+    fold_separation(male_df, args.folds, feature_cols, label)
+    fold_separation(female_df, args.folds, feature_cols, label)
+    fold_separation(train_df, args.folds, feature_cols, label)
+    return train_df, test_df, male_df, female_df, feature_cols, label, z
+
 def fold_separation(train_df, folds, feat_cols, label):
     skf = StratifiedKFold(n_splits=folds)
     train_df['fold'] = np.zeros(train_df.shape[0])
