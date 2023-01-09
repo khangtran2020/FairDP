@@ -63,7 +63,7 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     sensitivity = num_feat ** 2 / 4 + num_feat
     coff_0 = 1.0
     coff_1 = np.sum(X / 2 - X * y, axis=0).astype(np.float32)
-    coff_2 = (1/8)*np.dot(X.T, X).astype(np.float32)
+    coff_2 = (1 / 8) * np.dot(X.T, X).astype(np.float32)
     noise_1 = np.random.laplace(0.0, sensitivity / epsilon, coff_1.shape).astype(np.float32)
     noise_2 = np.random.laplace(0.0, sensitivity / epsilon, coff_2.shape).astype(np.float32)
     if mode == 'scipy':
@@ -74,8 +74,8 @@ def get_coefficient(X, y, epsilon=None, lbda=None, mode='torch'):
     elif mode == 'func' or mode == 'fairdp' or mode == 'func_org':
         coff_1 = coff_1 + noise_1
         coff_2 = coff_2 + noise_2
-        coff_2 = 1/2 + (coff_2 + coff_2.T)
-        coff_2 = coff_2 + 5 * np.sqrt(2) * sensitivity * (1/epsilon) * np.eye(num_feat)
+        coff_2 = 1 / 2 + (coff_2 + coff_2.T)
+        coff_2 = coff_2 + 5 * np.sqrt(2) * sensitivity * (1 / epsilon) * np.eye(num_feat)
         w, V = np.linalg.eig(coff_2)
         indx = np.where(w > 1e-8)[0]
         w = w[indx].astype(np.float32)
@@ -105,16 +105,16 @@ def get_name(args, current_date, fold):
                                                                             current_date.second)
     else:
         return '{}_{}_fold_{}_submode_{}_eps_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
-                                                                         args.mode, fold,
-                                                                         args.submode,
-                                                                         args.tar_eps,
-                                                                         args.epochs,
-                                                                         current_date.day,
-                                                                         current_date.month,
-                                                                         current_date.year,
-                                                                         current_date.hour,
-                                                                         current_date.minute,
-                                                                         current_date.second)
+                                                                                args.mode, fold,
+                                                                                args.submode,
+                                                                                args.tar_eps,
+                                                                                args.epochs,
+                                                                                current_date.day,
+                                                                                current_date.month,
+                                                                                current_date.year,
+                                                                                current_date.hour,
+                                                                                current_date.minute,
+                                                                                current_date.second)
 
 
 def bound_kl(args, num_ep):
@@ -261,8 +261,6 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         df_train_fem['bias'] = 1
         df_val_mal['bias'] = 1
         df_val_fem['bias'] = 1
-
-
 
         # female
         X_fem = df_train_fem[args.feature].values
@@ -546,7 +544,8 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         args.num_val_male = len(df_val_mal)
         args.num_val_female = len(df_val_fem)
         return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
-    elif args.mode in ['fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed', 'smooth', 'fairdp_baseline']:
+    elif args.mode in ['fairdp', 'fairdp_epoch', 'fairdp_track', 'onebatch', 'proposed', 'smooth', 'fairdp_baseline',
+                       'ratio']:
         df_train = pd.concat([male_df[male_df.fold != fold], female_df[female_df.fold != fold]], axis=0).reset_index(
             drop=True)
         df_valid = pd.concat([male_df[male_df.fold == fold], female_df[female_df.fold == fold]], axis=0).reset_index(
@@ -722,7 +721,8 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
             ismale=test_df[args.z].values
         )
 
-        batch_size = min(int(args.sampling_rate * len(train_male_dataset)), int(args.sampling_rate * len(train_female_dataset)))
+        batch_size = min(int(args.sampling_rate * len(train_male_dataset)),
+                         int(args.sampling_rate * len(train_female_dataset)))
 
         # Defining DataLoader with BalanceClass Sampler
         sampler_male = torch.utils.data.RandomSampler(train_male_dataset, replacement=False)
@@ -795,14 +795,9 @@ def init_data(args, fold, train_df, test_df, male_df, female_df):
         args.num_val_female = len(df_val_fem)
         return train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader
 
-
 # def choose_data(args, df_1, df_2):
 #
 #     if len(df_1) > len(df_2):
 #         df = df_2.copy()
 #         df_2 = df_1.copy()
 #         df_1 = df.copy()
-
-
-
-

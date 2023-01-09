@@ -216,13 +216,17 @@ def minmax_scale(df, cols):
     return df
 
 def choose_data(args, df_0, df_1):
+    # print(len(df_0),len(df_1))
     if len(df_0) > len(df_1):
         df = df_1.copy()
         df_1 = df_0.copy()
         df_0 = df.copy()
         del(df)
 
-    init_rate = len(df_0)/len(df_0)
+    df_0 = df_0.reset_index(drop=True)
+    df_1 = df_1.reset_index(drop=True)
+
+    init_rate = len(df_0)/len(df_1)
     if init_rate == args.ratio:
         return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
     elif init_rate < args.ratio:
@@ -232,14 +236,15 @@ def choose_data(args, df_0, df_1):
             return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
         else:
             idx = np.random.choice(np.arange(len(df_1)), size=num_pt,replace=False)
-            df_1 = df_1[idx].copy()
+            df_1 = df_1.iloc[idx, :].copy()
             return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
     else:
         num_pt = int(len(df_1)*args.ratio)
+        print(init_rate, args.ratio, num_pt)
         if num_pt == 0.0:
             print('Can not achieve that rate between group0 and group1')
             return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
         else:
             idx = np.random.choice(np.arange(len(df_0)), size=num_pt, replace=False)
-            df_0 = df_0[idx].copy()
+            df_0 = df_0.iloc[idx, :].copy()
             return df_0.reset_index(drop=True), df_1.reset_index(drop=True)
