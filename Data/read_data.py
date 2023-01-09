@@ -4,6 +4,9 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import MinMaxScaler
+import torch
+from torch.utils.data import DataLoader, TensorDataset
+# from sklearn.model_selection import train_test_split
 
 def read_adult(args):
     header = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'income']
@@ -168,3 +171,44 @@ def minmax_scale(df, cols):
     for col in cols:
         df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
     return df
+
+def read_utk(args):
+    df = pd.read_csv('Data/UTK/age_gender.gz', compression='gzip', index_col='Unnamed: 0')
+    df['X'] = df.index
+    df['ethnicity'] = df['ethnicity'].apply(lambda x: x!=0).astype(int)
+    feature_cols = ['X']
+
+
+# options = {'bs':512, 'label': 'gender', 'bin_labels':False}
+# def get_UTK(args):
+#     utk_data_path = "Data/Abalone/age_gender.gz"
+#     torch.manual_seed(0)
+#     label = 'gender'
+#     pd00 = pd.read_csv(utk_data_path, compression='gzip')
+#     age_bins = [0, 10, 15, 20, 25, 30, 40, 50, 60, 120]
+#     age_labels = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+#     pd00['age_bins'] = pd.cut(pd00.age, bins=age_bins, labels=age_labels)
+#     X = pd00.pixels.apply(lambda x: np.array(x.split(" "), dtype=float))
+#     X = np.stack(X)
+#     X = X / 255.0
+#     X = X.astype('float32').reshape(X.shape[0], 1, 48, 48)
+#     if options['bin_labels']:
+#         pd00[label] = pd00[label].apply(lambda x: x!=0).astype(int)
+#         n_class = 2
+#     y = pd00[label].values
+#     np.random.seed(0)  # random seed of partition data into train/test
+#     x_train, x_test, y_train, y_test  = train_test_split(X, y,  test_size=0.2)
+#     train_tensor = TensorDataset(torch.FloatTensor(x_train), torch.LongTensor(y_train))
+#     train_loader = DataLoader(dataset=train_tensor, batch_size= options['bs'], shuffle=True)
+#     #
+#     test_tensor = TensorDataset(torch.FloatTensor(x_test), torch.LongTensor(y_test))
+#     test_loader = DataLoader(dataset=test_tensor, batch_size=options['bs'], shuffle=True)
+#     x_test, y_test = torch.FloatTensor(x_test).cuda(), torch.LongTensor(y_test).cuda()
+#
+#     n_class =  int ( torch.max(y_test).item() + 1)
+#     params = {'x_test':x_test, 'y_test':y_test, 'train_loader':train_loader, 'test_loader':test_loader,
+#         'n_channel':1, 'n_hidden' :576, 'n_all':  1024, 'n_out':n_class, 'n_hidden_google':25600}
+#
+#     params['n_in'] = np.prod(x_test.shape[1:])
+#
+#     return params
