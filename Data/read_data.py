@@ -84,8 +84,8 @@ def read_adult(args):
         feature_cols.append('bias')
     train_df = all_data[:train_df.shape[0]].reset_index(drop=True)
     test_df = all_data[train_df.shape[0]:].reset_index(drop=True)
-    male_df = train_df[train_df['sex'] == 1].copy()
-    female_df = train_df[train_df['sex'] == 0].copy()
+    male_df = train_df[train_df['sex'] == 1].copy().reset_index(drop=True)
+    female_df = train_df[train_df['sex'] == 0].copy().reset_index(drop=True)
     fold_separation(male_df, args.folds, feature_cols, label)
     fold_separation(female_df, args.folds, feature_cols, label)
     if args.mode == 'ratio':
