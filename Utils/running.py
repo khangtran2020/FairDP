@@ -458,6 +458,7 @@ def run_fair_dpsgd(fold, train_df, test_df, male_df, female_df, args, device, cu
 
 def run_fair_dpsgd_track_grad(fold, train_df, test_df, male_df, female_df, args, device, current_time):
     name = get_name(args=args, current_date=current_time, fold=fold)
+    print(name)
     model_name = '{}.pt'.format(name)
 
     train_loader, train_male_loader, train_female_loader, valid_male_loader, valid_female_loader, valid_loader, test_loader = init_data(
