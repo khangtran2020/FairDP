@@ -103,6 +103,19 @@ def get_name(args, current_date, fold):
                                                                             current_date.hour,
                                                                             current_date.minute,
                                                                             current_date.second)
+    elif args.mode == 'ratio':
+        return '{}_{}_fold_{}_sigma_{}_C_{}_epochs_{}_ratio_{}{}{}_{}{}{}'.format(args.dataset,
+                                                                            args.mode, fold,
+                                                                            args.ns,
+                                                                            args.clip,
+                                                                            args.epochs,
+                                                                            args.ratio,
+                                                                            current_date.day,
+                                                                            current_date.month,
+                                                                            current_date.year,
+                                                                            current_date.hour,
+                                                                            current_date.minute,
+                                                                            current_date.second)
     else:
         return '{}_{}_fold_{}_submode_{}_eps_{}_epochs_{}_{}{}{}_{}{}{}'.format(args.dataset,
                                                                                 args.mode, fold,
